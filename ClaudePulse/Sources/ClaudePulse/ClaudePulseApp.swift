@@ -35,8 +35,7 @@ struct ClaudePulseApp: App {
                 .frame(width: 380, height: MenuBarLayout.panelHeight)
                 .onAppear {
                     Task {
-                        await repoProvider.refresh()
-                        await vaultTagProvider.refresh()
+                        await statusProvider.refresh()
                     }
                 }
         } label: {

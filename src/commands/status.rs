@@ -91,6 +91,9 @@ pub fn cmd_status(config: &Config) -> Result<()> {
                     obj["agent_time_pct"] = serde_json::json!(timing.agent_time_pct);
                     obj["user_time_pct"] = serde_json::json!(timing.user_time_pct);
                 }
+                if let Some(ref wt_root) = info.worktree_root {
+                    obj["worktree_root"] = serde_json::json!(wt_root);
+                }
                 obj
             })
         })

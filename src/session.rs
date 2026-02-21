@@ -65,6 +65,37 @@ pub struct ActiveSessionInfo {
     pub edit_count: usize,
     pub bash_count: usize,
     pub files_touched_count: usize,
+    /// Canonical repo root when session is inside a Claude Code worktree.
+    pub worktree_root: Option<String>,
+}
+
+/// Detect if `cwd` is inside a Claude Code worktree (`.claude/worktrees/<name>/`).
+/// Returns the canonical repo root (the directory containing `.claude/`).
+pub fn detect_worktree_root(cwd: &str) -> Option<String> {
+    let marker = "/.claude/worktrees/";
+    let idx = cwd.find(marker)?;
+    // The repo root is everything before `/.claude/`
+    let root = &cwd[..idx];
+    if root.is_empty() {
+        None
+    } else {
+        Some(root.to_string())
+    }
+}
+
+/// Extract the worktree name from a Claude Code worktree path.
+/// E.g. "/path/to/repo/.claude/worktrees/feature-a" → "feature-a"
+pub fn detect_worktree_label(cwd: &str) -> Option<String> {
+    let marker = "/.claude/worktrees/";
+    let idx = cwd.find(marker)?;
+    let after = &cwd[idx + marker.len()..];
+    // Take the first path component after the marker
+    let label = after.split('/').next().unwrap_or("");
+    if label.is_empty() {
+        None
+    } else {
+        Some(label.to_string())
+    }
 }
 
 /// Extract last 2 path components as a project name (e.g. "chagui/knowledge-sync").
@@ -382,7 +413,12 @@ pub fn extract_session_metadata(path: &Path) -> Result<ActiveSessionInfo, String
             .to_string();
     }
 
-    let project_name = project_name_from_cwd(&project_cwd);
+    let worktree_root = detect_worktree_root(&project_cwd);
+    let project_name = if let Some(ref root) = worktree_root {
+        project_name_from_cwd(root)
+    } else {
+        project_name_from_cwd(&project_cwd)
+    };
 
     let avg_turn_duration_ms = if turn_count > 0 {
         total_turn_duration_ms / turn_count as u64
@@ -429,6 +465,7 @@ pub fn extract_session_metadata(path: &Path) -> Result<ActiveSessionInfo, String
         edit_count,
         bash_count,
         files_touched_count: files_touched.len(),
+        worktree_root,
     })
 }
 
@@ -902,5 +939,80 @@ mod tests {
             let json = serde_json::json!({key: val});
             let _ = extract_assistant_text(&json);
         }
+    }
+
+    // ---- detect_worktree_root ----
+
+    #[test]
+    fn worktree_root_claude_code_default() {
+        let cwd = "/Users/me/Repos/org/myproject/.claude/worktrees/feature-a";
+        assert_eq!(
+            detect_worktree_root(cwd),
+            Some("/Users/me/Repos/org/myproject".to_string())
+        );
+    }
+
+    #[test]
+    fn worktree_root_nested_worktree_path() {
+        let cwd = "/home/dev/code/.claude/worktrees/hotfix/subdir";
+        assert_eq!(
+            detect_worktree_root(cwd),
+            Some("/home/dev/code".to_string())
+        );
+    }
+
+    #[test]
+    fn worktree_root_not_a_worktree() {
+        let cwd = "/Users/me/Repos/org/myproject";
+        assert_eq!(detect_worktree_root(cwd), None);
+    }
+
+    #[test]
+    fn worktree_root_claude_dir_but_not_worktrees() {
+        let cwd = "/Users/me/Repos/org/myproject/.claude/settings";
+        assert_eq!(detect_worktree_root(cwd), None);
+    }
+
+    // ---- detect_worktree_label ----
+
+    #[test]
+    fn worktree_label_simple() {
+        let cwd = "/Users/me/Repos/org/myproject/.claude/worktrees/feature-a";
+        assert_eq!(
+            detect_worktree_label(cwd),
+            Some("feature-a".to_string())
+        );
+    }
+
+    #[test]
+    fn worktree_label_with_subdir() {
+        let cwd = "/home/dev/code/.claude/worktrees/hotfix/some/subdir";
+        assert_eq!(
+            detect_worktree_label(cwd),
+            Some("hotfix".to_string())
+        );
+    }
+
+    #[test]
+    fn worktree_label_not_a_worktree() {
+        let cwd = "/Users/me/Repos/org/myproject";
+        assert_eq!(detect_worktree_label(cwd), None);
+    }
+
+    #[test]
+    fn worktree_label_trailing_slash_only() {
+        // Marker is present but name is empty (path ends at worktrees/)
+        let cwd = "/Users/me/Repos/org/myproject/.claude/worktrees/";
+        assert_eq!(detect_worktree_label(cwd), None);
+    }
+
+    // ---- project_name with worktree ----
+
+    #[test]
+    fn project_name_uses_root_for_worktree() {
+        let worktree_cwd = "/Users/me/Repos/org/myproject/.claude/worktrees/feature-a";
+        let root = detect_worktree_root(worktree_cwd).unwrap();
+        let name = project_name_from_cwd(&root);
+        assert_eq!(name, "org/myproject");
     }
 }

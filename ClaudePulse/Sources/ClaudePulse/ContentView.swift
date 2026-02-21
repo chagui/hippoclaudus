@@ -23,24 +23,25 @@ struct ContentView: View {
                 SearchResultsDetail(searchProvider: searchProvider)
             } else {
                 ScrollView {
-                    VStack(spacing: 8) {
-                        // Session cards
-                        ForEach(statusProvider.activeSessions, id: \.id) { session in
-                            SessionCard(
-                                session: session,
-                                enrichment: enrichmentProvider.enrichments[session.id],
-                                isExpanded: expandedSessions.contains(session.id),
-                                onToggle: { toggleSession(session.id) }
-                            )
-                        }
+                    VStack(spacing: 0) {
+                        if !statusProvider.activeSessions.isEmpty {
+                            SectionHeader(title: "Sessions")
 
-                        if statusProvider.activeSessions.isEmpty {
+                            ForEach(statusProvider.activeSessions, id: \.id) { session in
+                                SessionCard(
+                                    session: session,
+                                    enrichment: enrichmentProvider.enrichments[session.id],
+                                    isExpanded: expandedSessions.contains(session.id),
+                                    onToggle: { toggleSession(session.id) }
+                                )
+                                if session.id != statusProvider.activeSessions.last?.id {
+                                    Divider().padding(.horizontal, 12)
+                                }
+                            }
+                        } else {
                             EmptyStateView(statusProvider: statusProvider)
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
-                    .padding(.bottom, 4)
 
                     ToolsSection(
                         statusProvider: statusProvider,
@@ -72,49 +73,99 @@ struct TopBar: View {
     @Binding var query: String
     var onSearch: () -> Void
     var onClear: () -> Void
+    @State private var showSearch = false
 
     var body: some View {
         HStack(spacing: 8) {
-            SearchBar(query: $query, onSearch: onSearch, onClear: onClear)
-            Text("Claude Pulse")
-                .font(.system(size: 11, weight: .semibold))
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
+
+            if showSearch {
+                TextField("Search vault...", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                    .onSubmit { onSearch() }
+            } else {
+                Spacer()
+                Text("Claude Pulse")
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer()
+            }
+
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    showSearch.toggle()
+                    if !showSearch { onClear() }
+                }
+            }) {
+                Image(systemName: showSearch ? "xmark" : "magnifyingglass")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 }
 
-// MARK: - Search Bar
+// MARK: - Section Header
 
-struct SearchBar: View {
-    @Binding var query: String
-    var onSearch: () -> Void
-    var onClear: () -> Void
+struct SectionHeader: View {
+    let title: String
+    var actionIcon: String? = nil
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Text(title.uppercased())
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .tracking(0.5)
+                if let actionIcon, let action {
+                    Button(action: action) {
+                        Image(systemName: actionIcon)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 6)
+
+            Divider().padding(.horizontal, 12)
+        }
+    }
+}
+
+// MARK: - Detail Row
+
+struct DetailRow: View {
+    let label: String
+    let value: String
+    var dotColor: Color? = nil
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-                .font(.system(size: 12))
-
-            TextField("Search vault...", text: $query)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .onSubmit { onSearch() }
-
-            if !query.isEmpty {
-                Button(action: onClear) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 11))
-                }
-                .buttonStyle(.plain)
+            if let dotColor {
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 6, height: 6)
             }
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 11, weight: .medium))
+                .lineLimit(1)
         }
-        .padding(6)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.vertical, 2.5)
+        .padding(.horizontal, 12)
     }
 }
 
@@ -128,31 +179,48 @@ struct SessionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header: status dot + name + model badge
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(session.isWaiting ? Color.yellow : Color.green)
-                    .frame(width: 8, height: 8)
+            // Header: status dot + project name + model badge + chevron
+            Button(action: onToggle) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(session.isWaiting ? Color.yellow : Color.green)
+                        .frame(width: 8, height: 8)
 
-                Text(session.projectName)
-                    .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
+                    Text(session.projectName)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
 
-                if enrichment?.isWorktree == true {
-                    Image(systemName: "arrow.triangle.branch")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.orange)
+                    if enrichment?.isWorktree == true {
+                        Image(systemName: "arrow.triangle.branch")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.orange)
+                        if let label = enrichment?.worktreeLabel {
+                            Text(label)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.orange)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    Spacer()
+
+                    Text(session.modelLabel)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color(nsColor: .separatorColor).opacity(0.3)))
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(.tertiary)
                 }
-
-                Spacer()
-
-                Text(session.modelLabel)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(Color(nsColor: .separatorColor).opacity(0.3)))
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
 
             // Status + duration
             HStack(spacing: 4) {
@@ -162,76 +230,42 @@ struct SessionCard: View {
             }
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
-            .padding(.top, 4)
+            .padding(.horizontal, 12)
             .padding(.leading, 16)
+            .padding(.bottom, 4)
 
             // Key metrics (always visible)
-            VStack(spacing: 0) {
-                CardMetricRow(label: "Tokens", value: session.totalTokensFormatted)
-                CardMetricRow(label: "Cost", value: session.estimatedCost)
-            }
-            .padding(.top, 6)
-            .padding(.leading, 16)
+            DetailRow(label: "Tokens", value: session.totalTokensFormatted)
+            DetailRow(label: "Cost", value: session.estimatedCost)
 
             // Expanded details
             if isExpanded {
-                VStack(spacing: 0) {
-                    if enrichment?.isGitRepo == true {
-                        CardMetricRow(label: "Branch", value: session.gitBranch)
-                    }
-                    CardMetricRow(label: "Turns", value: "\(session.exchangeCount)")
-                    CardMetricRow(label: "Avg Turn", value: session.avgTurnDuration)
-                    if let timeSplit = session.timeSplit {
-                        CardMetricRow(label: "Time Split", value: timeSplit)
-                    }
-                    if let toolSummary = session.toolSummary {
-                        CardMetricRow(label: "Tools", value: toolSummary)
-                    }
-                    if let files = session.filesTouchedCount, files > 0 {
-                        CardMetricRow(label: "Files", value: "\(files) touched")
-                    }
+                if enrichment?.isGitRepo == true {
+                    DetailRow(label: "Branch", value: session.gitBranch)
                 }
-                .padding(.leading, 16)
+                if let wtLabel = enrichment?.worktreeLabel {
+                    DetailRow(label: "Worktree", value: wtLabel)
+                }
+                DetailRow(label: "Turns", value: "\(session.exchangeCount)")
+                DetailRow(label: "Avg Turn", value: session.avgTurnDuration)
+                if let timeSplit = session.timeSplit {
+                    DetailRow(label: "Time Split", value: timeSplit)
+                }
+                if let toolSummary = session.toolSummary {
+                    DetailRow(label: "Tools", value: toolSummary)
+                }
+                if let files = session.filesTouchedCount, files > 0 {
+                    DetailRow(label: "Files", value: "\(files) touched")
+                }
 
                 if let prInfo = enrichment?.prInfo {
                     PRCard(prInfo: prInfo)
-                        .padding(.top, 6)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 4)
                 }
             }
-
-            // Expand/collapse chevron
-            Button(action: onToggle) {
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 6)
-            }
-            .buttonStyle(.plain)
         }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-}
-
-// MARK: - Card Metric Row
-
-struct CardMetricRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-        }
-        .padding(.vertical, 2)
+        .padding(.bottom, 6)
     }
 }
 
@@ -263,7 +297,7 @@ struct PRCard: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "arrow.triangle.pull")
-                .font(.system(size: 12))
+                .font(.system(size: 11))
                 .foregroundStyle(stateColor)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -297,9 +331,7 @@ struct PRCard: View {
             .buttonStyle(.plain)
             .help("Open PR in browser")
         }
-        .padding(8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.vertical, 6)
     }
 }
 
@@ -309,32 +341,30 @@ struct EmptyStateView: View {
     @ObservedObject var statusProvider: StatusProvider
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 24))
                 .foregroundStyle(.tertiary)
+                .padding(.top, 16)
 
             Text("No active sessions")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
+                .padding(.bottom, 4)
 
-            VStack(spacing: 0) {
-                CardMetricRow(label: "Last Sync", value: statusProvider.lastSyncAgo)
-                CardMetricRow(label: "Vault Notes", value: "\(statusProvider.vaultNotes)")
-                CardMetricRow(label: "Unprocessed", value: "\(statusProvider.unprocessed)")
-            }
-            .padding(.top, 4)
+            DetailRow(label: "Last Sync", value: statusProvider.lastSyncAgo)
+            DetailRow(label: "Vault Notes", value: "\(statusProvider.vaultNotes)")
+            DetailRow(label: "Unprocessed", value: "\(statusProvider.unprocessed)")
 
             if let errorMessage = statusProvider.errorMessage {
                 Text(errorMessage)
                     .font(.system(size: 10))
                     .foregroundStyle(.red)
+                    .padding(.horizontal, 12)
             }
         }
-        .padding(16)
+        .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -349,22 +379,8 @@ struct ToolsSection: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Section header
-            HStack(spacing: 6) {
-                Image(systemName: "ellipsis.circle.fill")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                Text("Tools")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            SectionHeader(title: "Tools")
 
-            Divider().padding(.horizontal, 12)
-
-            // Expandable sections
             ToolMenuItem(icon: "folder", label: "Repositories", count: repoProvider.repos.count, isExpanded: showRepos) {
                 withAnimation(.easeInOut(duration: 0.15)) { showRepos.toggle() }
             }
@@ -372,20 +388,13 @@ struct ToolsSection: View {
             if showRepos {
                 VStack(spacing: 0) {
                     ForEach(repoProvider.repos) { repo in
-                        HStack(spacing: 6) {
-                            Text(repo.projectName)
-                                .font(.system(size: 11))
-                                .lineLimit(1)
-                            Spacer()
-                            Text("\(repo.sessionCount)")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.tertiary)
+                        if repo.worktreeCount > 0 {
+                            DetailRow(label: repo.projectName, value: "\(repo.sessionCount) sessions (\(repo.worktreeCount) worktrees)")
+                        } else {
+                            DetailRow(label: repo.projectName, value: "\(repo.sessionCount)")
                         }
-                        .padding(.horizontal, 36)
-                        .padding(.vertical, 4)
                     }
                 }
-                .padding(.bottom, 2)
             }
 
             ToolMenuItem(icon: "tag", label: "Tags", count: vaultTagProvider.tags.count, isExpanded: showTags) {
@@ -395,29 +404,19 @@ struct ToolsSection: View {
             if showTags {
                 VStack(spacing: 0) {
                     ForEach(vaultTagProvider.tags) { tag in
-                        HStack(spacing: 6) {
-                            Text(tag.name)
-                                .font(.system(size: 11))
-                                .lineLimit(1)
-                            Spacer()
-                            Text("\(tag.documentCount)")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.horizontal, 36)
-                        .padding(.vertical, 4)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if let doc = tag.documents.first {
-                                vaultTagProvider.openInObsidian(document: doc)
+                        DetailRow(label: tag.name, value: "\(tag.documentCount)")
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if let doc = tag.documents.first {
+                                    vaultTagProvider.openInObsidian(document: doc)
+                                }
                             }
-                        }
                     }
                 }
-                .padding(.bottom, 2)
             }
 
-            // Action items
+            Divider().padding(.horizontal, 12).padding(.vertical, 4)
+
             ToolMenuItem(icon: "arrow.triangle.2.circlepath", label: statusProvider.isSyncing ? "Syncing..." : "Sync Now") {
                 Task { await statusProvider.syncNow() }
             }
@@ -451,18 +450,18 @@ struct ToolMenuItem: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .frame(width: 16)
 
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
 
                 Spacer()
 
                 if let count {
                     Text("\(count)")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .medium))
@@ -470,15 +469,13 @@ struct ToolMenuItem: View {
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.vertical, 6)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(isHovered ? Color(nsColor: .controlBackgroundColor).opacity(0.6) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in isHovered = hovering }
-        .padding(.horizontal, 4)
     }
 }
 
@@ -488,7 +485,7 @@ struct BottomBar: View {
     @ObservedObject var statusProvider: StatusProvider
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             if statusProvider.isSyncing {
                 ProgressView()
                     .controlSize(.mini)
@@ -498,15 +495,15 @@ struct BottomBar: View {
             } else {
                 Text(statusText)
                     .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
             }
 
             Spacer()
 
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 Button(action: { Task { await statusProvider.syncNow() } }) {
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                 }
                 .buttonStyle(.plain)
                 .disabled(statusProvider.isSyncing)
@@ -518,14 +515,14 @@ struct BottomBar: View {
                     }
                 }) {
                     Image(systemName: "folder")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                 }
                 .buttonStyle(.plain)
                 .help("Open Vault")
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 
     private var statusText: String {
@@ -558,15 +555,15 @@ struct SearchResultsDetail: View {
             }
         } else {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(searchProvider.results) { result in
                         SearchResultRow(result: result)
                             .onTapGesture {
                                 searchProvider.openInObsidian(result: result)
                             }
+                        Divider().padding(.horizontal, 12)
                     }
                 }
-                .padding(10)
             }
         }
     }
@@ -578,7 +575,7 @@ struct SearchResultRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(result.title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .lineLimit(1)
 
             if !result.tags.isEmpty {
@@ -587,8 +584,8 @@ struct SearchResultRow: View {
                         Text(tag)
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
                             .background(Color(nsColor: .separatorColor).opacity(0.3))
                             .clipShape(Capsule())
                     }
@@ -603,9 +600,8 @@ struct SearchResultRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
 }

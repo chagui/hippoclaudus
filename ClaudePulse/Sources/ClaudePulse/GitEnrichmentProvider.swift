@@ -38,6 +38,8 @@ struct PRInfo: Sendable {
 struct SessionEnrichment: Sendable {
     let isGitRepo: Bool
     let isWorktree: Bool
+    let canonicalRepoRoot: String?
+    let worktreeLabel: String?
     let prInfo: PRInfo?
 }
 
@@ -73,13 +75,14 @@ final class GitEnrichmentProvider: ObservableObject {
 
         // Skip enrichment entirely if not inside a git repository
         guard await isGitRepo(cwd: cwd) else {
-            return (session.sessionId, SessionEnrichment(isGitRepo: false, isWorktree: false, prInfo: nil))
+            return (session.sessionId, SessionEnrichment(isGitRepo: false, isWorktree: false, canonicalRepoRoot: nil, worktreeLabel: nil, prInfo: nil))
         }
 
-        async let worktree = detectWorktree(cwd: cwd)
+        async let worktreeInfo = detectWorktreeInfo(cwd: cwd)
         async let pr = fetchPR(cwd: cwd)
 
-        let enrichment = await SessionEnrichment(isGitRepo: true, isWorktree: worktree, prInfo: pr)
+        let (isWT, canonicalRoot, wtLabel) = await worktreeInfo
+        let enrichment = await SessionEnrichment(isGitRepo: true, isWorktree: isWT, canonicalRepoRoot: canonicalRoot, worktreeLabel: wtLabel, prInfo: pr)
         return (session.sessionId, enrichment)
     }
 
@@ -103,8 +106,9 @@ final class GitEnrichmentProvider: ObservableObject {
 
     // MARK: - Worktree Detection
 
-    private nonisolated func detectWorktree(cwd: String) async -> Bool {
-        guard let gitPath = ExecutableFinder.gitPath else { return false }
+    /// Returns (isWorktree, canonicalRepoRoot, worktreeLabel) from the same two git calls.
+    private nonisolated func detectWorktreeInfo(cwd: String) async -> (Bool, String?, String?) {
+        guard let gitPath = ExecutableFinder.gitPath else { return (false, nil, nil) }
 
         async let commonDir = runCommand(
             executablePath: gitPath,
@@ -122,7 +126,7 @@ final class GitEnrichmentProvider: ObservableObject {
               let common = String(data: commonData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
               let git = String(data: gitData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
         else {
-            return false
+            return (false, nil, nil)
         }
 
         // Resolve relative paths against cwd
@@ -130,7 +134,16 @@ final class GitEnrichmentProvider: ObservableObject {
         let resolvedCommon = URL(fileURLWithPath: common, relativeTo: cwdURL).standardized.path
         let resolvedGit = URL(fileURLWithPath: git, relativeTo: cwdURL).standardized.path
 
-        return resolvedCommon != resolvedGit
+        let isWorktree = resolvedCommon != resolvedGit
+        guard isWorktree else { return (false, nil, nil) }
+
+        // Canonical repo root is the parent of the common git dir (e.g. /repo/.git → /repo)
+        let canonicalRoot = (resolvedCommon as NSString).deletingLastPathComponent
+
+        // Worktree label: last component of the cwd (e.g. "/tmp/myproject-hotfix" → "myproject-hotfix")
+        let label = (cwd as NSString).lastPathComponent
+
+        return (true, canonicalRoot, label)
     }
 
     // MARK: - PR Fetch

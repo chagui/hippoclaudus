@@ -7,6 +7,7 @@ struct RepoSession: Identifiable, Sendable {
     let sessionId: String
     let lastModified: Date
     let gitBranch: String
+    let worktreeLabel: String?
 
     var id: String { sessionId }
 
@@ -33,8 +34,10 @@ struct RepoInfo: Identifiable, Sendable {
     let projectPath: String
     let projectName: String
     let sessions: [RepoSession]
+    let worktreePaths: Set<String>
 
     var sessionCount: Int { sessions.count }
+    var worktreeCount: Int { worktreePaths.count }
     var id: String { projectPath }
 }
 
@@ -46,14 +49,15 @@ final class RepoProvider: ObservableObject {
 
     nonisolated private static let claudeProjectsPath = AppConfig.projectsPath
 
-    func refresh() async {
+    func refresh(enrichments: [String: SessionEnrichment] = [:]) async {
+        let enrichmentsCopy = enrichments
         let results = await Task.detached {
-            Self.scanRepos()
+            Self.scanRepos(enrichments: enrichmentsCopy)
         }.value
         self.repos = results
     }
 
-    private nonisolated static func scanRepos() -> [RepoInfo] {
+    private nonisolated static func scanRepos(enrichments: [String: SessionEnrichment]) -> [RepoInfo] {
         let fm = FileManager.default
         let basePath = claudeProjectsPath
 
@@ -70,41 +74,156 @@ final class RepoProvider: ObservableObject {
             let jsonlFiles = files.filter { $0.hasSuffix(".jsonl") }
             guard !jsonlFiles.isEmpty else { continue }
 
-            // Extract project info from first file
-            let (projectPath, projectName) = extractProjectInfo(dirPath: dirPath, fileName: jsonlFiles[0])
+            // Extract project info from first file (includes cwd for worktree heuristic)
+            let (projectPath, projectName, worktreeRoot) = extractProjectInfoWithWorktree(dirPath: dirPath, fileName: jsonlFiles[0])
 
             // Build session list
             var sessions: [RepoSession] = []
+            var worktreePaths: Set<String> = []
             for file in jsonlFiles {
                 let filePath = "\(dirPath)/\(file)"
                 let sessionId = (file as NSString).deletingPathExtension
                 let attrs = try? fm.attributesOfItem(atPath: filePath)
                 let mtime = attrs?[.modificationDate] as? Date ?? Date.distantPast
                 let branch = extractGitBranch(filePath: filePath) ?? "unknown"
-                sessions.append(RepoSession(sessionId: sessionId, lastModified: mtime, gitBranch: branch))
+
+                // Determine worktree label from enrichment or heuristic
+                let wtLabel: String?
+                if let enrichment = enrichments[sessionId], let label = enrichment.worktreeLabel {
+                    wtLabel = label
+                } else if let cwd = extractCwd(filePath: filePath) {
+                    wtLabel = detectWorktreeLabelFromCwd(cwd)
+                } else {
+                    wtLabel = nil
+                }
+
+                if let label = wtLabel {
+                    worktreePaths.insert(label)
+                }
+
+                sessions.append(RepoSession(sessionId: sessionId, lastModified: mtime, gitBranch: branch, worktreeLabel: wtLabel))
             }
 
             sessions.sort { $0.lastModified > $1.lastModified }
 
+            let effectivePath: String
+            let effectiveName: String
+            if let root = worktreeRoot {
+                effectivePath = root
+                effectiveName = projectNameFromPath(root)
+            } else {
+                effectivePath = projectPath ?? dirPath
+                effectiveName = projectName ?? dir
+            }
+
             repos.append(RepoInfo(
-                projectPath: projectPath ?? dirPath,
-                projectName: projectName ?? dir,
-                sessions: sessions
+                projectPath: effectivePath,
+                projectName: effectiveName,
+                sessions: sessions,
+                worktreePaths: worktreePaths
             ))
         }
+
+        // Merge repos that share the same canonical root
+        repos = mergeWorktreeRepos(repos, enrichments: enrichments)
 
         repos.sort { $0.sessionCount > $1.sessionCount }
         return repos
     }
 
-    /// Reads the first user message from a JSONL file to extract `cwd` and derive the project name.
-    nonisolated static func extractProjectInfo(dirPath: String, fileName: String) -> (String?, String?) {
+    // MARK: - Worktree Grouping
+
+    /// Merges repos that share the same canonical repo root (from heuristic or enrichments).
+    private nonisolated static func mergeWorktreeRepos(_ repos: [RepoInfo], enrichments: [String: SessionEnrichment]) -> [RepoInfo] {
+        // Build a mapping: canonical root → [RepoInfo indices]
+        var rootToIndices: [String: [Int]] = [:]
+        for (i, repo) in repos.enumerated() {
+            // Check enrichments for canonical root
+            var canonicalRoot: String?
+            for session in repo.sessions {
+                if let enrichment = enrichments[session.sessionId], let root = enrichment.canonicalRepoRoot {
+                    canonicalRoot = root
+                    break
+                }
+            }
+
+            let key = canonicalRoot ?? repo.projectPath
+            rootToIndices[key, default: []].append(i)
+        }
+
+        var merged: [RepoInfo] = []
+        var consumed: Set<Int> = []
+
+        for (root, indices) in rootToIndices {
+            guard !indices.isEmpty else { continue }
+            for idx in indices { consumed.insert(idx) }
+
+            if indices.count == 1 {
+                merged.append(repos[indices[0]])
+                continue
+            }
+
+            // Merge multiple repos under the same root
+            var allSessions: [RepoSession] = []
+            var allWorktreePaths: Set<String> = []
+            for idx in indices {
+                allSessions.append(contentsOf: repos[idx].sessions)
+                allWorktreePaths.formUnion(repos[idx].worktreePaths)
+                // Also add the original project path as a worktree path if it differs from root
+                if repos[idx].projectPath != root {
+                    let label = (repos[idx].projectPath as NSString).lastPathComponent
+                    allWorktreePaths.insert(label)
+                }
+            }
+            allSessions.sort { $0.lastModified > $1.lastModified }
+
+            merged.append(RepoInfo(
+                projectPath: root,
+                projectName: projectNameFromPath(root),
+                sessions: allSessions,
+                worktreePaths: allWorktreePaths
+            ))
+        }
+
+        return merged
+    }
+
+    // MARK: - Helpers
+
+    /// Extract last 2 path components as a project name.
+    nonisolated static func projectNameFromPath(_ path: String) -> String {
+        let components = path.components(separatedBy: "/").filter { !$0.isEmpty }
+        if components.count >= 2 {
+            return "\(components[components.count - 2])/\(components[components.count - 1])"
+        }
+        return components.last ?? path
+    }
+
+    /// Detects `.claude/worktrees/<name>` in a cwd and returns the worktree label.
+    private nonisolated static func detectWorktreeLabelFromCwd(_ cwd: String) -> String? {
+        let marker = "/.claude/worktrees/"
+        guard let idx = cwd.range(of: marker) else { return nil }
+        let after = String(cwd[idx.upperBound...])
+        let label = after.components(separatedBy: "/").first ?? ""
+        return label.isEmpty ? nil : label
+    }
+
+    /// Detects `.claude/worktrees/` in a cwd and returns the repo root.
+    private nonisolated static func detectWorktreeRootFromCwd(_ cwd: String) -> String? {
+        let marker = "/.claude/worktrees/"
+        guard let range = cwd.range(of: marker) else { return nil }
+        let root = String(cwd[..<range.lowerBound])
+        return root.isEmpty ? nil : root
+    }
+
+    /// Reads the first user message from a JSONL file to extract `cwd`, project name, and worktree root.
+    nonisolated static func extractProjectInfoWithWorktree(dirPath: String, fileName: String) -> (String?, String?, String?) {
         let filePath = "\(dirPath)/\(fileName)"
-        guard let handle = FileHandle(forReadingAtPath: filePath) else { return (nil, nil) }
+        guard let handle = FileHandle(forReadingAtPath: filePath) else { return (nil, nil, nil) }
         defer { handle.closeFile() }
 
         let chunk = handle.readData(ofLength: 8192)
-        guard let content = String(data: chunk, encoding: .utf8) else { return (nil, nil) }
+        guard let content = String(data: chunk, encoding: .utf8) else { return (nil, nil, nil) }
 
         for line in content.components(separatedBy: "\n") {
             guard !line.isEmpty,
@@ -114,18 +233,35 @@ final class RepoProvider: ObservableObject {
                   let cwd = json["cwd"] as? String
             else { continue }
 
-            let components = cwd.components(separatedBy: "/").filter { !$0.isEmpty }
-            let name: String
-            if components.count >= 2 {
-                name = "\(components[components.count - 2])/\(components[components.count - 1])"
-            } else {
-                name = components.last ?? cwd
-            }
+            let worktreeRoot = detectWorktreeRootFromCwd(cwd)
+            let effectivePath = worktreeRoot ?? cwd
+            let name = projectNameFromPath(effectivePath)
 
-            return (cwd, name)
+            return (cwd, name, worktreeRoot)
         }
 
-        return (nil, nil)
+        return (nil, nil, nil)
+    }
+
+    /// Reads the cwd from the first user message in a JSONL file.
+    private nonisolated static func extractCwd(filePath: String) -> String? {
+        guard let handle = FileHandle(forReadingAtPath: filePath) else { return nil }
+        defer { handle.closeFile() }
+
+        let chunk = handle.readData(ofLength: 4096)
+        guard let content = String(data: chunk, encoding: .utf8) else { return nil }
+
+        for line in content.components(separatedBy: "\n") {
+            guard !line.isEmpty,
+                  let data = line.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  json["type"] as? String == "user",
+                  let cwd = json["cwd"] as? String
+            else { continue }
+            return cwd
+        }
+
+        return nil
     }
 
     /// Reads the first user message from a JSONL file to extract `gitBranch`.

@@ -63,7 +63,7 @@ final class StatusProvider: ObservableObject {
             let sessions = self.activeSessions
             Task {
                 await self.enrichmentProvider.enrich(sessions: sessions)
-                await self.repoProvider.refresh()
+                await self.repoProvider.refresh(enrichments: self.enrichmentProvider.enrichments)
                 await self.vaultTagProvider.refresh()
             }
         } catch {
@@ -153,6 +153,8 @@ struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
     let editCount: Int?
     let bashCount: Int?
     let filesTouchedCount: Int?
+    /// Canonical repo root when session is inside a Claude Code worktree (from Rust heuristic).
+    let worktreeRoot: String?
 
     var id: String { sessionId }
 
@@ -274,5 +276,6 @@ struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
         case editCount = "edit_count"
         case bashCount = "bash_count"
         case filesTouchedCount = "files_touched_count"
+        case worktreeRoot = "worktree_root"
     }
 }
