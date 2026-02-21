@@ -1,0 +1,36 @@
+[package]
+name = "claude-pulse-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+tempfile = "3"
+serde_json = "1"
+
+[dependencies.claude-pulse]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "fuzz_extract_session"
+path = "fuzz_targets/fuzz_extract_session.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_extract_metadata"
+path = "fuzz_targets/fuzz_extract_metadata.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_parse_json_entry"
+path = "fuzz_targets/fuzz_parse_json_entry.rs"
+doc = false
