@@ -59,6 +59,24 @@ cd ClaudePulse && swift test  # uses swift-testing framework
 
 Rust tests use `proptest` for property-based testing and `tempfile` for isolated state DB tests. Integration tests live in `tests/`. Swift tests use Apple's `swift-testing` framework. Fuzzing targets are in `fuzz/`.
 
+## Code Coverage
+
+```bash
+# Both components
+./scripts/coverage.sh          # summary
+./scripts/coverage.sh --html   # HTML reports, opens in browser
+
+# Individual
+./scripts/coverage.sh rust     # Rust only
+./scripts/coverage.sh swift    # Swift only
+```
+
+Rust coverage requires `cargo-llvm-cov` (`cargo install cargo-llvm-cov`). Swift coverage is built-in via `swift test --enable-code-coverage`.
+
+**After any code change, run `./scripts/coverage.sh` and verify coverage does not regress.** Target thresholds:
+- Rust: **80%** line coverage (`cargo llvm-cov --fail-under-lines 80`)
+- Swift testable logic (models, providers, parsers): **60%** line coverage. SwiftUI views (`ContentView.swift`, `ClaudePulseApp.swift`) and process-dependent providers (`GitEnrichmentProvider.swift`) are excluded from this target since they require mocking infrastructure that doesn't exist yet.
+
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on macOS: fmt check → build (Rust + Swift) → clippy → test.

@@ -15,7 +15,7 @@ Split the system into two components:
 - **Rust CLI** (`claude-pulse`): All data processing, session discovery, JSONL parsing, state management, and sync orchestration.
 - **Swift menu bar app** (`ClaudePulse/`): Native macOS UI that invokes the Rust CLI as a subprocess and presents results.
 
-The interface between them is **JSON over stdout**. The Swift app calls `CLIRunner.run()` (synchronous, 30s timeout) or `CLIRunner.runStreaming()` (line-by-line for long operations). The CLI always outputs structured JSON (`StatusResponse`, `ActiveSessionResponse`, etc.).
+The interface between them is **JSON over stdout**. The Swift app calls `CLIRunner.run()` (with a configurable timeout, default 30s), `CLIRunner.runCancellable()` (no timeout, process terminated on Task cancellation), or `CLIRunner.runStreaming()` (line-by-line for long operations). The CLI always outputs structured JSON (`StatusResponse`, `ActiveSessionResponse`, etc.).
 
 ## Consequences
 

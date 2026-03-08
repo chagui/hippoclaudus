@@ -16,3 +16,4 @@ We use ADRs to document significant architectural decisions, their context, and 
 | [006](006-session-discovery-threshold.md) | 5-minute threshold for session discovery | Accepted |
 | [007](007-commit-ratio-metric.md) | Commit ratio as an AI output confidence signal | Accepted |
 | [008](008-macos-only-file-layout.md) | macOS-only file layout following OS conventions | Accepted |
+| [009](009-cancellable-sync-and-error-visibility.md) | Cancellable sync and error visibility | Accepted |
