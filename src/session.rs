@@ -343,10 +343,14 @@ pub fn extract_session_metadata(path: &Path) -> Result<ActiveSessionInfo, String
                     model = m.to_string();
                 }
                 if let Some(usage) = msg.get("usage") {
-                    total_input_tokens +=
-                        usage.get("input_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
-                    total_output_tokens +=
-                        usage.get("output_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+                    total_input_tokens += usage
+                        .get("input_tokens")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    total_output_tokens += usage
+                        .get("output_tokens")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
                     total_cache_read_tokens += usage
                         .get("cache_read_input_tokens")
                         .and_then(|v| v.as_u64())
@@ -978,19 +982,13 @@ mod tests {
     #[test]
     fn worktree_label_simple() {
         let cwd = "/Users/me/Repos/org/myproject/.claude/worktrees/feature-a";
-        assert_eq!(
-            detect_worktree_label(cwd),
-            Some("feature-a".to_string())
-        );
+        assert_eq!(detect_worktree_label(cwd), Some("feature-a".to_string()));
     }
 
     #[test]
     fn worktree_label_with_subdir() {
         let cwd = "/home/dev/code/.claude/worktrees/hotfix/some/subdir";
-        assert_eq!(
-            detect_worktree_label(cwd),
-            Some("hotfix".to_string())
-        );
+        assert_eq!(detect_worktree_label(cwd), Some("hotfix".to_string()));
     }
 
     #[test]

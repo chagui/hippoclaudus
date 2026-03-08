@@ -202,7 +202,10 @@ mod tests {
 
     #[test]
     fn low_confidence_for_plain_md() {
-        let tc = make_write_call("/project/README.md", Some("# My Project\n\nThis is a readme."));
+        let tc = make_write_call(
+            "/project/README.md",
+            Some("# My Project\n\nThis is a readme."),
+        );
         let score = prompt_confidence(&tc, "/project");
         // Should be below threshold - just .md extension and in src path
         assert!(score < 0.5, "expected < 0.5, got {}", score);

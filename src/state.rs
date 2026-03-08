@@ -333,10 +333,7 @@ impl SyncState {
             return;
         };
 
-        log::info!(
-            "Migrating state from {} to SQLite...",
-            json_path.display()
-        );
+        log::info!("Migrating state from {} to SQLite...", json_path.display());
 
         let content = match std::fs::read_to_string(&json_path) {
             Ok(c) => c,

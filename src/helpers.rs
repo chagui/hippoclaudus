@@ -132,10 +132,19 @@ mod tests {
 
     #[test]
     fn session_id_from_various_paths() {
-        assert_eq!(session_id_from_path(Path::new("/foo/bar/abc123.jsonl")), "abc123");
-        assert_eq!(session_id_from_path(Path::new("/a/b/my-session.jsonl")), "my-session");
+        assert_eq!(
+            session_id_from_path(Path::new("/foo/bar/abc123.jsonl")),
+            "abc123"
+        );
+        assert_eq!(
+            session_id_from_path(Path::new("/a/b/my-session.jsonl")),
+            "my-session"
+        );
         assert_eq!(session_id_from_path(Path::new("simple.jsonl")), "simple");
-        assert_eq!(session_id_from_path(Path::new("/no-extension")), "no-extension");
+        assert_eq!(
+            session_id_from_path(Path::new("/no-extension")),
+            "no-extension"
+        );
     }
 
     // ---- file_mtime ----

@@ -78,9 +78,7 @@ impl Config {
 }
 
 fn home_dir() -> PathBuf {
-    PathBuf::from(
-        std::env::var("HOME").expect("$HOME environment variable is not set"),
-    )
+    PathBuf::from(std::env::var("HOME").expect("$HOME environment variable is not set"))
 }
 
 fn expand_tilde(path: &str) -> PathBuf {

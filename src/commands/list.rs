@@ -1,8 +1,8 @@
 use anyhow::Result;
 
 use claude_pulse::config::Config;
-use claude_pulse::state::SyncState;
 use claude_pulse::discover_sessions;
+use claude_pulse::state::SyncState;
 
 use crate::helpers::{file_mtime, session_id_from_path};
 
@@ -19,9 +19,7 @@ pub fn cmd_list(config: &Config, days: u32) -> Result<()> {
             continue;
         }
 
-        let size = std::fs::metadata(path)
-            .map(|m| m.len())
-            .unwrap_or(0);
+        let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
 
         println!(
             "{}\t{}\t{:.0}\t{}KB",

@@ -46,7 +46,10 @@ pub fn cmd_prompts(config: &Config, days: u32, threshold: f64, json: bool) -> Re
     // Also include previously discovered prompts from DB
     let db_prompts = state.get_prompt_files(Some(days))?;
     for dbp in &db_prompts {
-        if !all_prompts.iter().any(|p| p.file_path == dbp.file_path && p.session_id == dbp.session_id) {
+        if !all_prompts
+            .iter()
+            .any(|p| p.file_path == dbp.file_path && p.session_id == dbp.session_id)
+        {
             all_prompts.push(claude_pulse::prompts::PromptFileInfo {
                 file_path: dbp.file_path.clone(),
                 session_id: dbp.session_id.clone(),
@@ -60,17 +63,27 @@ pub fn cmd_prompts(config: &Config, days: u32, threshold: f64, json: bool) -> Re
     }
 
     // Sort by confidence descending
-    all_prompts.sort_by(|a, b| b.prompt_confidence.partial_cmp(&a.prompt_confidence).unwrap_or(std::cmp::Ordering::Equal));
+    all_prompts.sort_by(|a, b| {
+        b.prompt_confidence
+            .partial_cmp(&a.prompt_confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     if json {
         println!("{}", serde_json::to_string_pretty(&all_prompts).unwrap());
     } else {
         if all_prompts.is_empty() {
-            println!("No prompt files detected in the last {} days (threshold: {}).", days, threshold);
+            println!(
+                "No prompt files detected in the last {} days (threshold: {}).",
+                days, threshold
+            );
             return Ok(());
         }
 
-        println!("{:<60} {:<12} {:<10} {:<6} {}", "PATH", "SESSION", "DATE", "CONF", "EXISTS");
+        println!(
+            "{:<60} {:<12} {:<10} {:<6} {}",
+            "PATH", "SESSION", "DATE", "CONF", "EXISTS"
+        );
         println!("{}", "-".repeat(100));
 
         for p in &all_prompts {

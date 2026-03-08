@@ -1,5 +1,5 @@
-use claude_pulse::config::Config;
 use crate::prompt::build_prompt;
+use claude_pulse::config::Config;
 use claude_pulse::session::ExtractedSession;
 use std::process::Command;
 
@@ -43,7 +43,10 @@ pub fn invoke_claude(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("claude exited with status {}: {}", output.status, stderr));
+        return Err(format!(
+            "claude exited with status {}: {}",
+            output.status, stderr
+        ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();

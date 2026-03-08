@@ -51,9 +51,15 @@ fn state_is_processed_false_for_different_mtime() {
 fn state_processed_sessions_returns_marked() {
     let (state, _dir) = temp_state();
 
-    state.mark_processed("id1", 100.0, "created:a.md", 1000).unwrap();
-    state.mark_processed("id2", 200.0, "no_new_knowledge", 500).unwrap();
-    state.mark_processed("id3", 300.0, "skipped:too_short", 100).unwrap();
+    state
+        .mark_processed("id1", 100.0, "created:a.md", 1000)
+        .unwrap();
+    state
+        .mark_processed("id2", 200.0, "no_new_knowledge", 500)
+        .unwrap();
+    state
+        .mark_processed("id3", 300.0, "skipped:too_short", 100)
+        .unwrap();
 
     let sessions = state.processed_sessions().unwrap();
     assert!(sessions.contains_key("id1"));
@@ -85,10 +91,24 @@ fn session_stats_upsert_and_get() {
     let (state, _dir) = temp_state();
 
     state
-        .upsert_session_stats("sess-1", 60000, 45000, 15000, 5, 3, 10, 20, 30, 8, Some(75.5))
+        .upsert_session_stats(
+            "sess-1",
+            60000,
+            45000,
+            15000,
+            5,
+            3,
+            10,
+            20,
+            30,
+            8,
+            Some(75.5),
+        )
         .unwrap();
 
-    let row = state.get_session_stats("sess-1").expect("should find stats");
+    let row = state
+        .get_session_stats("sess-1")
+        .expect("should find stats");
     assert_eq!(row.session_id, "sess-1");
     assert_eq!(row.total_duration_ms, 60000);
     assert_eq!(row.agent_time_ms, 45000);
@@ -106,8 +126,12 @@ fn session_stats_upsert_and_get() {
 fn session_stats_get_all() {
     let (state, _dir) = temp_state();
 
-    state.upsert_session_stats("s1", 1000, 800, 200, 2, 1, 1, 2, 3, 4, None).unwrap();
-    state.upsert_session_stats("s2", 2000, 1600, 400, 4, 2, 5, 6, 7, 8, Some(50.0)).unwrap();
+    state
+        .upsert_session_stats("s1", 1000, 800, 200, 2, 1, 1, 2, 3, 4, None)
+        .unwrap();
+    state
+        .upsert_session_stats("s2", 2000, 1600, 400, 4, 2, 5, 6, 7, 8, Some(50.0))
+        .unwrap();
 
     let all = state.get_all_session_stats(7).unwrap();
     assert_eq!(all.len(), 2);
@@ -163,7 +187,11 @@ fn discover_active_sessions_finds_recent_jsonl() {
     std::fs::create_dir_all(&project_dir).unwrap();
 
     let file_path = project_dir.join("session1.jsonl");
-    std::fs::write(&file_path, r#"{"type":"user","message":{"content":"hello"}}"#).unwrap();
+    std::fs::write(
+        &file_path,
+        r#"{"type":"user","message":{"content":"hello"}}"#,
+    )
+    .unwrap();
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),

@@ -26,7 +26,9 @@ pub fn cmd_status(config: &Config) -> Result<()> {
             if let Some(entry) = processed_sessions.get(&sid) {
                 if entry.result.starts_with("skipped:") {
                     skipped_count += 1;
-                } else if entry.result.starts_with("created:") || entry.result.starts_with("updated:") {
+                } else if entry.result.starts_with("created:")
+                    || entry.result.starts_with("updated:")
+                {
                     knowledge_count += 1;
                 }
             }

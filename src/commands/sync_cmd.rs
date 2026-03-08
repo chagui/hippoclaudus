@@ -1,14 +1,20 @@
 use anyhow::{Context, Result};
 
 use claude_pulse::config::Config;
+use claude_pulse::discover_sessions;
 use claude_pulse::session::extract_session;
 use claude_pulse::state::SyncState;
-use claude_pulse::discover_sessions;
 
 use crate::helpers::{file_mtime, session_id_from_path};
 use crate::sync;
 
-pub fn cmd_sync(config: &Config, dry_run: bool, days: u32, min_text_chars: usize, model: &str) -> Result<()> {
+pub fn cmd_sync(
+    config: &Config,
+    dry_run: bool,
+    days: u32,
+    min_text_chars: usize,
+    model: &str,
+) -> Result<()> {
     let state = SyncState::open(config)?;
     let sessions = discover_sessions(config, Some(days));
 
@@ -32,7 +38,13 @@ pub fn cmd_sync(config: &Config, dry_run: bool, days: u32, min_text_chars: usize
         };
 
         if session.total_text_chars < min_text_chars {
-            state.mark_processed(&session_id, mtime, "skipped:too_short", session.total_text_chars)
+            state
+                .mark_processed(
+                    &session_id,
+                    mtime,
+                    "skipped:too_short",
+                    session.total_text_chars,
+                )
                 .context("Failed to mark session as skipped")?;
             skipped += 1;
             continue;
@@ -67,7 +79,12 @@ pub fn cmd_sync(config: &Config, dry_run: bool, days: u32, min_text_chars: usize
                             .created_files
                             .iter()
                             .map(|f| format!("created:{}", f))
-                            .chain(result.updated_files.iter().map(|f| format!("updated:{}", f)))
+                            .chain(
+                                result
+                                    .updated_files
+                                    .iter()
+                                    .map(|f| format!("updated:{}", f)),
+                            )
                             .collect::<Vec<_>>()
                             .join(",");
                         state.mark_processed(

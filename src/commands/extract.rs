@@ -1,9 +1,9 @@
 use anyhow::Result;
 
 use claude_pulse::config::Config;
+use claude_pulse::discover_sessions;
 use claude_pulse::session::extract_session;
 use claude_pulse::state::SyncState;
-use claude_pulse::discover_sessions;
 
 use crate::helpers::{file_mtime, session_id_from_path, truncate};
 
@@ -54,7 +54,10 @@ pub fn cmd_extract(config: &Config, days: u32, min_text_chars: usize) -> Result<
     }
 
     if count == 0 {
-        println!("No unprocessed sessions found with >= {} chars in the last {} days.", min_text_chars, days);
+        println!(
+            "No unprocessed sessions found with >= {} chars in the last {} days.",
+            min_text_chars, days
+        );
     } else {
         println!("\nExtracted {} sessions.", count);
     }

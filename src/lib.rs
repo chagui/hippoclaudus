@@ -164,10 +164,7 @@ fn count_md_files(dir: &PathBuf) -> usize {
 
     for entry in entries.flatten() {
         let path = entry.path();
-        let name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
         // Skip dotfiles and Templates
         if name.starts_with('.') || name == "Templates" {
