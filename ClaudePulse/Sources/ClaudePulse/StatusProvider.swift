@@ -21,6 +21,8 @@ final class StatusProvider: ObservableObject {
     let repoProvider: RepoProvider
     let vaultTagProvider: VaultTagProvider
     private var refreshTimer: Timer?
+    private var refreshTasks: [Task<Void, Never>] = []
+    private var syncTask: Task<Void, Never>?
 
     init(
         enrichmentProvider: GitEnrichmentProvider,
@@ -61,11 +63,15 @@ final class StatusProvider: ObservableObject {
             self.errorMessage = nil
 
             let sessions = self.activeSessions
-            Task {
+            refreshTasks.forEach { $0.cancel() }
+            refreshTasks.removeAll()
+            refreshTasks.append(Task {
+                await self.vaultTagProvider.refresh()
+            })
+            refreshTasks.append(Task {
                 await self.enrichmentProvider.enrich(sessions: sessions)
                 await self.repoProvider.refresh(enrichments: self.enrichmentProvider.enrichments)
-                await self.vaultTagProvider.refresh()
-            }
+            })
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -75,13 +81,22 @@ final class StatusProvider: ObservableObject {
         guard !isSyncing else { return }
         isSyncing = true
         errorMessage = nil
-        do {
-            _ = try await CLIRunner.run(arguments: ["sync", "--days", "7"])
-            await refresh()
-        } catch {
-            errorMessage = error.localizedDescription
+        syncTask = Task {
+            do {
+                _ = try await CLIRunner.runCancellable(arguments: ["sync", "--days", "7"])
+                await refresh()
+            } catch is CancellationError {
+                errorMessage = "Sync cancelled"
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isSyncing = false
         }
-        isSyncing = false
+        await syncTask?.value
+    }
+
+    func cancelSync() {
+        syncTask?.cancel()
     }
 }
 

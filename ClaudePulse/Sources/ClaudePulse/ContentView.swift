@@ -493,6 +493,12 @@ struct BottomBar: View {
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             } else {
+                if statusProvider.errorMessage != nil {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.red)
+                        .help(statusProvider.errorMessage!)
+                }
                 Text(statusText)
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
@@ -501,13 +507,21 @@ struct BottomBar: View {
             Spacer()
 
             HStack(spacing: 4) {
-                Button(action: { Task { await statusProvider.syncNow() } }) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 10))
+                if statusProvider.isSyncing {
+                    Button(action: { statusProvider.cancelSync() }) {
+                        Image(systemName: "xmark.circle")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Cancel Sync")
+                } else {
+                    Button(action: { Task { await statusProvider.syncNow() } }) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Sync Now")
                 }
-                .buttonStyle(.plain)
-                .disabled(statusProvider.isSyncing)
-                .help("Sync Now")
 
                 Button(action: {
                     if let url = URL(string: "obsidian://open?vault=Claude") {

@@ -58,6 +58,38 @@ enum CLIRunner {
         }
     }
 
+    /// Runs the CLI without a timeout. The process is terminated if the Task is cancelled.
+    static func runCancellable(arguments: [String]) async throws -> Data {
+        guard let binaryPath = resolvedBinaryPath() else {
+            throw CLIRunnerError.binaryNotFound
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: binaryPath)
+        process.arguments = arguments
+
+        let stdout = Pipe()
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+
+        return try await withTaskCancellationHandler {
+            try await Task.detached {
+                try process.run()
+                process.waitUntilExit()
+
+                let data = stdout.fileHandleForReading.readDataToEndOfFile()
+
+                guard process.terminationStatus == 0 else {
+                    throw CLIRunnerError.nonZeroExit(Int(process.terminationStatus))
+                }
+
+                return data
+            }.value
+        } onCancel: {
+            process.terminate()
+        }
+    }
+
     static func runStreaming(arguments: [String], onLine: @escaping @Sendable (String) -> Void) async throws {
         guard let binaryPath = resolvedBinaryPath() else {
             throw CLIRunnerError.binaryNotFound
