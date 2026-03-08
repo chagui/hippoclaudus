@@ -6,11 +6,11 @@ Accepted
 
 ## Context
 
-Claude Pulse needs to track which sessions have been processed, per-session statistics (tool counts, timing, commit ratios), and discovered prompt files. The original implementation used a JSON file, which required manual file locking and had no query capability. The menu bar app polls status while the CLI might be syncing, creating concurrent read/write scenarios.
+Hippoclaudus needs to track which sessions have been processed, per-session statistics (tool counts, timing, commit ratios), and discovered prompt files. The original implementation used a JSON file, which required manual file locking and had no query capability. The menu bar app polls status while the CLI might be syncing, creating concurrent read/write scenarios.
 
 ## Decision
 
-Use SQLite with WAL (Write-Ahead Logging) mode as the state store. The database lives at `~/Library/Application Support/com.chagui.claude-pulse/state.db` with `0600` permissions.
+Use SQLite with WAL (Write-Ahead Logging) mode as the state store. The database lives at `~/Library/Application Support/com.chagui.hippoclaudus/state.db` with `0600` permissions.
 
 Tables:
 - `processed_sessions`: session_id, mtime, processed_at, result (created/updated/skipped), text_chars

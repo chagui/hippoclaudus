@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import ClaudePulse
+@testable import Hippo
 
 @Suite struct FrontmatterParsingTests {
 

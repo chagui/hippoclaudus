@@ -1,23 +1,24 @@
 #!/bin/bash
 set -e
 
-PLIST_NAME="com.chagui.claude-pulse"
+PLIST_NAME="com.chagui.hippoclaudus"
 
 echo "==> Unloading LaunchAgent..."
 launchctl bootout "gui/$(id -u)/$PLIST_NAME" 2>/dev/null || true
 rm -f ~/Library/LaunchAgents/$PLIST_NAME.plist
 echo "    LaunchAgent removed"
 
-echo "==> Removing CLI symlink..."
-rm -f ~/.local/bin/claude-pulse
-echo "    Symlink removed"
+echo "==> Removing CLI symlinks..."
+rm -f ~/.local/bin/hpc
+rm -f ~/.local/bin/hippo
+echo "    Symlinks removed"
 
 echo "==> Removing application data..."
-rm -rf "$HOME/Library/Application Support/com.chagui.claude-pulse"
+rm -rf "$HOME/Library/Application Support/com.chagui.hippoclaudus"
 echo "    Config and state DB removed"
 
 echo "==> Removing logs..."
-rm -rf "$HOME/Library/Logs/com.chagui.claude-pulse"
+rm -rf "$HOME/Library/Logs/com.chagui.hippoclaudus"
 echo "    Logs removed"
 
 echo ""

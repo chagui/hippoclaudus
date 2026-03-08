@@ -88,7 +88,7 @@ struct TopBar: View {
                     .onSubmit { onSearch() }
             } else {
                 Spacer()
-                Text("Claude Pulse")
+                Text("Hippoclaudus")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
             }
@@ -428,7 +428,7 @@ struct ToolsSection: View {
                 }
             }
 
-            ToolMenuItem(icon: "power", label: "Quit Claude Pulse") {
+            ToolMenuItem(icon: "power", label: "Quit Hippoclaudus") {
                 NSApplication.shared.terminate(nil)
             }
         }

@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The core value proposition of Claude Pulse is extracting reusable knowledge from Claude Code sessions and organizing it in an Obsidian vault. This is a semantic task: deciding what constitutes useful knowledge, how to categorize it, whether to create a new file or update an existing one, and how to respect the vault's existing structure. These decisions require judgment that is difficult to encode in rules.
+The core value proposition of Hippoclaudus is extracting reusable knowledge from Claude Code sessions and organizing it in an Obsidian vault. This is a semantic task: deciding what constitutes useful knowledge, how to categorize it, whether to create a new file or update an existing one, and how to respect the vault's existing structure. These decisions require judgment that is difficult to encode in rules.
 
 ## Decision
 

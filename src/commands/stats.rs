@@ -1,10 +1,10 @@
 use anyhow::Result;
 
-use claude_pulse::config::Config;
-use claude_pulse::git_stats::compute_commit_ratio;
-use claude_pulse::session::{extract_session, extract_session_metadata};
-use claude_pulse::state::SyncState;
-use claude_pulse::{discover_active_sessions, discover_sessions};
+use hippoclaudus::config::Config;
+use hippoclaudus::git_stats::compute_commit_ratio;
+use hippoclaudus::session::{extract_session, extract_session_metadata};
+use hippoclaudus::state::SyncState;
+use hippoclaudus::{discover_active_sessions, discover_sessions};
 
 use crate::helpers::session_id_from_path;
 

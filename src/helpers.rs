@@ -1,4 +1,4 @@
-use claude_pulse::config::Config;
+use hippoclaudus::config::Config;
 use std::path::{Path, PathBuf};
 
 pub fn session_id_from_path(path: &Path) -> String {

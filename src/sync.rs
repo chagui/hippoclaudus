@@ -1,6 +1,6 @@
 use crate::prompt::build_prompt;
-use claude_pulse::config::Config;
-use claude_pulse::session::ExtractedSession;
+use hippoclaudus::config::Config;
+use hippoclaudus::session::ExtractedSession;
 use std::process::Command;
 
 pub struct SyncResult {

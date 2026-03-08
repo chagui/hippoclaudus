@@ -6,14 +6,14 @@ Accepted
 
 ## Context
 
-Claude Pulse needs to do two fundamentally different things: heavy I/O work (scanning JSONL files, querying SQLite, running git commands, invoking `claude -p`) and providing a responsive native macOS menu bar UI. A single-language solution would compromise on one axis — Rust has no native macOS UI story, and Swift is not ideal for CLI tools with complex file I/O and subprocess orchestration.
+Hippoclaudus needs to do two fundamentally different things: heavy I/O work (scanning JSONL files, querying SQLite, running git commands, invoking `claude -p`) and providing a responsive native macOS menu bar UI. A single-language solution would compromise on one axis — Rust has no native macOS UI story, and Swift is not ideal for CLI tools with complex file I/O and subprocess orchestration.
 
 ## Decision
 
 Split the system into two components:
 
-- **Rust CLI** (`claude-pulse`): All data processing, session discovery, JSONL parsing, state management, and sync orchestration.
-- **Swift menu bar app** (`ClaudePulse/`): Native macOS UI that invokes the Rust CLI as a subprocess and presents results.
+- **Rust CLI** (`hpc`): All data processing, session discovery, JSONL parsing, state management, and sync orchestration.
+- **Swift menu bar app** (`Hippo/`): Native macOS UI that invokes the Rust CLI as a subprocess and presents results.
 
 The interface between them is **JSON over stdout**. The Swift app calls `CLIRunner.run()` (with a configurable timeout, default 30s), `CLIRunner.runCancellable()` (no timeout, process terminated on Task cancellation), or `CLIRunner.runStreaming()` (line-by-line for long operations). The CLI always outputs structured JSON (`StatusResponse`, `ActiveSessionResponse`, etc.).
 

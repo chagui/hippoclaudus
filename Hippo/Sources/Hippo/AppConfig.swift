@@ -1,6 +1,6 @@
 @preconcurrency import Foundation
 
-/// Reads shared config from ~/Library/Application Support/com.chagui.claude-pulse/config.json
+/// Reads shared config from ~/Library/Application Support/com.chagui.hippoclaudus/config.json
 /// Falls back to hardcoded defaults if the file doesn't exist or can't be parsed.
 enum AppConfig {
     private struct ConfigFile: Decodable {
@@ -10,7 +10,7 @@ enum AppConfig {
 
     private static let configPath: String = {
         let home = NSHomeDirectory()
-        return "\(home)/Library/Application Support/com.chagui.claude-pulse/config.json"
+        return "\(home)/Library/Application Support/com.chagui.hippoclaudus/config.json"
     }()
 
     private static let defaultVaultPath: String = {

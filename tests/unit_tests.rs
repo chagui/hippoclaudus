@@ -1,8 +1,8 @@
 use rusqlite::Connection;
 use tempfile::TempDir;
 
-use claude_pulse::config::Config;
-use claude_pulse::state::SyncState;
+use hippoclaudus::config::Config;
+use hippoclaudus::state::SyncState;
 
 // ---------------------------------------------------------------------------
 // SyncState — inject an in-memory connection to avoid disk I/O and WAL threads
@@ -175,7 +175,7 @@ fn discover_sessions_empty_dir() {
         vault_path: "/tmp/vault".to_string(),
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
-    let sessions = claude_pulse::discover_sessions(&config, Some(7));
+    let sessions = hippoclaudus::discover_sessions(&config, Some(7));
     assert!(sessions.is_empty());
 }
 
@@ -197,11 +197,11 @@ fn discover_active_sessions_finds_recent_jsonl() {
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
 
-    let active = claude_pulse::discover_active_sessions(&config);
+    let active = hippoclaudus::discover_active_sessions(&config);
     assert_eq!(active.len(), 1);
     assert!(active[0].to_str().unwrap().contains("session1.jsonl"));
 
-    let completed = claude_pulse::discover_sessions(&config, Some(7));
+    let completed = hippoclaudus::discover_sessions(&config, Some(7));
     assert!(completed.is_empty());
 }
 
@@ -218,7 +218,7 @@ fn discover_sessions_skips_non_jsonl() {
         vault_path: "/tmp/vault".to_string(),
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
-    let sessions = claude_pulse::discover_sessions(&config, Some(7));
+    let sessions = hippoclaudus::discover_sessions(&config, Some(7));
     assert!(sessions.is_empty());
 }
 
@@ -228,6 +228,6 @@ fn discover_active_sessions_nonexistent_dir() {
         vault_path: "/tmp/vault".to_string(),
         claude_projects_path: "/nonexistent/path".to_string(),
     };
-    let sessions = claude_pulse::discover_active_sessions(&config);
+    let sessions = hippoclaudus::discover_active_sessions(&config);
     assert!(sessions.is_empty());
 }

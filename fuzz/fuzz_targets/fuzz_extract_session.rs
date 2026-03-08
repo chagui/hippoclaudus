@@ -8,5 +8,5 @@ fuzz_target!(|data: &[u8]| {
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
     tmp.write_all(data).unwrap();
     tmp.flush().unwrap();
-    let _ = claude_pulse::session::extract_session(tmp.path());
+    let _ = hippoclaudus::session::extract_session(tmp.path());
 });

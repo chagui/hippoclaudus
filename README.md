@@ -1,11 +1,11 @@
-# Claude Pulse
+# Hippoclaudus
 
 A macOS companion tool for [Claude Code](https://claude.ai/claude-code) that monitors active sessions, extracts knowledge from conversations, and syncs learnings to an Obsidian vault.
 
 ## Components
 
-- **Rust CLI** (`claude-pulse`) — Session discovery, knowledge extraction, vault sync
-- **Swift Menu Bar App** (`ClaudePulse`) — Real-time session monitoring, vault search, git enrichment
+- **Rust CLI** (`hpc`) — Session discovery, knowledge extraction, vault sync
+- **Swift Menu Bar App** (`Hippo`) — Real-time session monitoring, vault search, git enrichment
 - **LaunchAgent** — Daily automated sync at 1:00 AM
 
 ## Prerequisites
@@ -19,17 +19,17 @@ A macOS companion tool for [Claude Code](https://claude.ai/claude-code) that mon
 ## Installation
 
 ```bash
-./install.sh
+./scripts/install.sh
 ```
 
 This will:
-1. Build the Rust CLI and link it to `~/.local/bin/claude-pulse`
+1. Build the Rust CLI and link it to `~/.local/bin/hpc`
 2. Build the Swift menu bar app
 3. Install the LaunchAgent for daily sync
 
 ## Configuration
 
-Config is stored at `~/Library/Application Support/com.chagui.claude-pulse/config.json`:
+Config is stored at `~/Library/Application Support/com.chagui.hippoclaudus/config.json`:
 
 ```json
 {
@@ -42,69 +42,69 @@ Config is stored at `~/Library/Application Support/com.chagui.claude-pulse/confi
 
 ```bash
 # Show status (JSON output for the menu bar app)
-claude-pulse status
+hpc status
 
 # List unprocessed sessions from the last 7 days
-claude-pulse list --days 7
+hpc list --days 7
 
 # Dry-run: preview what knowledge would be extracted
-claude-pulse sync --dry-run --days 7
+hpc sync --dry-run --days 7
 
 # Run sync (creates/updates vault files)
-claude-pulse sync --days 7
+hpc sync --days 7
 
 # Extract session text without syncing
-claude-pulse extract --days 7
+hpc extract --days 7
 
 # Verbose logging
-claude-pulse --verbose sync --days 7
+hpc --verbose sync --days 7
 ```
 
 ## Running the Menu Bar App
 
 ```bash
-cd ClaudePulse
+cd Hippo
 swift build -c release
-.build/release/ClaudePulse
+.build/release/Hippo
 ```
 
 ## Uninstallation
 
 ```bash
-./uninstall.sh
+./scripts/uninstall.sh
 ```
 
 ## File Locations
 
 | Component | Path |
 |-----------|------|
-| Config | `~/Library/Application Support/com.chagui.claude-pulse/config.json` |
-| State DB | `~/Library/Application Support/com.chagui.claude-pulse/state.db` |
-| CLI Binary | `~/.local/bin/claude-pulse` |
-| Logs | `~/Library/Logs/com.chagui.claude-pulse/` |
-| LaunchAgent | `~/Library/LaunchAgents/com.chagui.claude-pulse.plist` |
+| Config | `~/Library/Application Support/com.chagui.hippoclaudus/config.json` |
+| State DB | `~/Library/Application Support/com.chagui.hippoclaudus/state.db` |
+| CLI Binary | `~/.local/bin/hpc` |
+| Logs | `~/Library/Logs/com.chagui.hippoclaudus/` |
+| LaunchAgent | `~/Library/LaunchAgents/com.chagui.hippoclaudus.plist` |
 
 ## Troubleshooting
 
 **CLI not found after install**: Ensure `~/.local/bin` is in your `PATH`.
 
-**Menu bar app can't find binary**: Run `install.sh` to create the symlink at `~/.local/bin/claude-pulse`.
+**Menu bar app can't find binary**: Run `scripts/install.sh` to create the symlink at `~/.local/bin/hpc`.
 
 **Sync not running automatically**: Check the LaunchAgent:
 ```bash
-launchctl list | grep claude-pulse
-launchctl kickstart gui/$(id -u)/com.chagui.claude-pulse
+launchctl list | grep hippoclaudus
+launchctl kickstart gui/$(id -u)/com.chagui.hippoclaudus
 ```
 
 **View sync logs**:
 ```bash
-tail -f ~/Library/Logs/com.chagui.claude-pulse/sync.log
-tail -f ~/Library/Logs/com.chagui.claude-pulse/sync.err
+tail -f ~/Library/Logs/com.chagui.hippoclaudus/sync.log
+tail -f ~/Library/Logs/com.chagui.hippoclaudus/sync.err
 ```
 
 **Log rotation**: Sync logs grow over time. Use macOS `newsyslog` or periodically truncate:
 ```bash
-: > ~/Library/Logs/com.chagui.claude-pulse/sync.log
+: > ~/Library/Logs/com.chagui.hippoclaudus/sync.log
 ```
 
 ## Development
@@ -112,7 +112,7 @@ tail -f ~/Library/Logs/com.chagui.claude-pulse/sync.err
 ```bash
 # Build and check
 cargo build && cargo clippy
-cd ClaudePulse && swift build
+cd Hippo && swift build
 
 # Run tests (requires cargo-nextest)
 cargo nextest run

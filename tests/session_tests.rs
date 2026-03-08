@@ -1,4 +1,4 @@
-use claude_pulse::session::{extract_session, extract_session_metadata};
+use hippoclaudus::session::{extract_session, extract_session_metadata};
 use std::path::PathBuf;
 
 fn fixture(name: &str) -> PathBuf {
@@ -72,7 +72,7 @@ fn test_extract_nonexistent_file() {
 #[test]
 fn test_config_tilde_expansion() {
     // Config tilde expansion uses $HOME
-    let config = claude_pulse::config::Config::load();
+    let config = hippoclaudus::config::Config::load();
     let vault = config.vault_path();
     let projects = config.projects_path();
 

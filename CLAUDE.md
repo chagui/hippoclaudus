@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What is Claude Pulse
+## What is Hippoclaudus
 
-A macOS companion tool for Claude Code that monitors active sessions, extracts knowledge from JSONL conversation logs, and syncs it to an Obsidian vault. Two components: a Rust CLI (`claude-pulse`) and a Swift menu bar app (`ClaudePulse/`).
+A macOS companion tool for Claude Code that monitors active sessions, extracts knowledge from JSONL conversation logs, and syncs it to an Obsidian vault. Two components: a Rust CLI (`hpc`) and a Swift menu bar app (`Hippo/`).
 
 ## Build & Test Commands
 
@@ -16,12 +16,12 @@ cargo fmt --check             # formatting
 cargo clippy -- -D warnings   # lint (CI treats warnings as errors)
 
 # Swift menu bar app
-cd ClaudePulse && swift build -c release
-cd ClaudePulse && swift test  # uses swift-testing framework
+cd Hippo && swift build -c release
+cd Hippo && swift test  # uses swift-testing framework
 
 # Install/uninstall (builds both, symlinks CLI to ~/.local/bin, installs LaunchAgent)
-./install.sh [--cli-only]
-./uninstall.sh
+./scripts/install.sh [--cli-only]
+./scripts/uninstall.sh
 ```
 
 ## Architecture
@@ -31,13 +31,13 @@ cd ClaudePulse && swift test  # uses swift-testing framework
 - `main.rs` → CLI entry point, clap subcommand dispatch
 - `lib.rs` → Public API surface (`discover_sessions`, `discover_active_sessions`, `vault_note_count`)
 - `session.rs` → JSONL streaming parser. Extracts message pairs, tool calls (Write/Edit/Bash), timestamps, git metadata. Filters noise patterns.
-- `config.rs` → Config loading from `~/Library/Application Support/com.chagui.claude-pulse/config.json`
+- `config.rs` → Config loading from `~/Library/Application Support/com.chagui.hippoclaudus/config.json`
 - `state.rs` → SQLite state DB (WAL mode, 0600 perms). Tracks processed sessions, stats, prompt files.
 - `sync.rs` → Invokes `claude -p` with extracted knowledge. Dry-run restricts tools to Read/Glob/Grep; production adds Write/Edit. Parses CREATED:/UPDATED: markers from stdout.
 - `git_stats.rs` → Commit ratio: % of Claude-touched files that made it into git commits
 - `commands/` → Subcommand handlers: `status`, `list`, `extract`, `sync_cmd`, `stats`, `prompts`
 
-**Swift Menu Bar App** (`ClaudePulse/`): Real-time session monitoring, vault search, git enrichment.
+**Swift Menu Bar App** (`Hippo/`): Real-time session monitoring, vault search, git enrichment.
 
 - `StatusProvider.swift` → Fetches CLI `status` output on a refresh timer
 - `CLIRunner.swift` → Executes Rust CLI binary
@@ -50,10 +50,10 @@ cd ClaudePulse && swift test  # uses swift-testing framework
 
 ## Key File Locations
 
-- Config: `~/Library/Application Support/com.chagui.claude-pulse/config.json`
-- State DB: `~/Library/Application Support/com.chagui.claude-pulse/state.db`
-- Logs: `~/Library/Logs/com.chagui.claude-pulse/`
-- LaunchAgent: `com.chagui.claude-pulse.plist` (daily sync at 1:00 AM)
+- Config: `~/Library/Application Support/com.chagui.hippoclaudus/config.json`
+- State DB: `~/Library/Application Support/com.chagui.hippoclaudus/state.db`
+- Logs: `~/Library/Logs/com.chagui.hippoclaudus/`
+- LaunchAgent: `com.chagui.hippoclaudus.plist` (daily sync at 1:00 AM)
 
 ## Testing
 
@@ -75,7 +75,7 @@ Rust coverage requires `cargo-llvm-cov` (`cargo install cargo-llvm-cov`) and `ca
 
 **After any code change, run `./scripts/coverage.sh` and verify coverage does not regress.** Target thresholds:
 - Rust: **80%** line coverage (`cargo llvm-cov --fail-under-lines 80`)
-- Swift testable logic (models, providers, parsers): **60%** line coverage. SwiftUI views (`ContentView.swift`, `ClaudePulseApp.swift`) and process-dependent providers (`GitEnrichmentProvider.swift`) are excluded from this target since they require mocking infrastructure that doesn't exist yet.
+- Swift testable logic (models, providers, parsers): **60%** line coverage. SwiftUI views (`ContentView.swift`, `HippoApp.swift`) and process-dependent providers (`GitEnrichmentProvider.swift`) are excluded from this target since they require mocking infrastructure that doesn't exist yet.
 
 ## CI
 

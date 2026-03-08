@@ -1,5 +1,5 @@
-use claude_pulse::config::Config;
-use claude_pulse::session::ExtractedSession;
+use hippoclaudus::config::Config;
+use hippoclaudus::session::ExtractedSession;
 
 pub fn build_prompt(session: &ExtractedSession, dry_run: bool, config: &Config) -> String {
     let vault_path = config.vault_path().display().to_string();
@@ -112,7 +112,7 @@ Important: Output CREATED/UPDATED lines so the calling tool can track results."#
 #[cfg(test)]
 mod tests {
     use super::*;
-    use claude_pulse::session::Exchange;
+    use hippoclaudus::session::Exchange;
     use proptest::prelude::*;
 
     fn make_config() -> Config {

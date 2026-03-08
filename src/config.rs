@@ -10,10 +10,12 @@ pub struct Config {
 }
 
 impl Config {
-    /// Load config from `~/Library/Application Support/com.chagui.claude-pulse/config.json`.
+    /// Load config from `~/Library/Application Support/com.chagui.hippoclaudus/config.json`.
     /// Falls back to defaults if the file doesn't exist.
     /// Creates the config file with defaults on first run.
+    /// Migrates from the old `com.chagui.hippoclaudus` location on first run.
     pub fn load() -> Self {
+        migrate_from_old_bundle_id();
         let path = Self::config_file_path();
         match fs::read_to_string(&path) {
             Ok(content) => serde_json::from_str(&content).unwrap_or_else(|e| {
@@ -41,10 +43,10 @@ impl Config {
         }
     }
 
-    /// Application Support directory for claude-pulse.
+    /// Application Support directory for hippoclaudus.
     pub fn app_support_dir(&self) -> PathBuf {
         let home = home_dir();
-        let dir = home.join("Library/Application Support/com.chagui.claude-pulse");
+        let dir = home.join("Library/Application Support/com.chagui.hippoclaudus");
         let _ = fs::create_dir_all(&dir);
         dir
     }
@@ -66,13 +68,45 @@ impl Config {
 
     fn config_file_path() -> PathBuf {
         let home = home_dir();
-        home.join("Library/Application Support/com.chagui.claude-pulse/config.json")
+        home.join("Library/Application Support/com.chagui.hippoclaudus/config.json")
     }
 
     fn defaults() -> Self {
         Self {
             vault_path: "~/Documents/Obsidian/Vaults/Claude".to_string(),
             claude_projects_path: "~/.claude/projects".to_string(),
+        }
+    }
+}
+
+/// Migrate Application Support and Logs from the old `com.chagui.claude-pulse` bundle ID
+/// to the new `com.chagui.hippoclaudus` location. No-op if the old directory doesn't exist
+/// or the new directory already exists.
+fn migrate_from_old_bundle_id() {
+    let home = home_dir();
+
+    let migrations = [
+        (
+            home.join("Library/Application Support/com.chagui.claude-pulse"),
+            home.join("Library/Application Support/com.chagui.hippoclaudus"),
+        ),
+        (
+            home.join("Library/Logs/com.chagui.claude-pulse"),
+            home.join("Library/Logs/com.chagui.hippoclaudus"),
+        ),
+    ];
+
+    for (old, new) in &migrations {
+        if old.exists() && !new.exists() {
+            match fs::rename(old, new) {
+                Ok(()) => log::info!("Migrated {} → {}", old.display(), new.display()),
+                Err(e) => log::warn!(
+                    "Failed to migrate {} → {}: {}",
+                    old.display(),
+                    new.display(),
+                    e
+                ),
+            }
         }
     }
 }

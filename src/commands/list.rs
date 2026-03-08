@@ -1,8 +1,8 @@
 use anyhow::Result;
 
-use claude_pulse::config::Config;
-use claude_pulse::discover_sessions;
-use claude_pulse::state::SyncState;
+use hippoclaudus::config::Config;
+use hippoclaudus::discover_sessions;
+use hippoclaudus::state::SyncState;
 
 use crate::helpers::{file_mtime, session_id_from_path};
 

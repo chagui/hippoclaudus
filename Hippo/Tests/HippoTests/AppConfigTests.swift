@@ -1,6 +1,6 @@
 import Testing
 
-@testable import ClaudePulse
+@testable import Hippo
 
 @Suite struct AppConfigTests {
     @Test func defaults() {

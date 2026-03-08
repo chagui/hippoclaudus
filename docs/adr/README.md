@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory contains Architecture Decision Records (ADRs) for Claude Pulse.
+This directory contains Architecture Decision Records (ADRs) for Hippoclaudus.
 
 We use ADRs to document significant architectural decisions, their context, and rationale. Each record follows the format from [Michael Nygard's article](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
 

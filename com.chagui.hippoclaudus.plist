@@ -3,10 +3,10 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.chagui.claude-pulse</string>
+    <string>com.chagui.hippoclaudus</string>
     <key>ProgramArguments</key>
     <array>
-        <string>__HOME__/.local/bin/claude-pulse</string>
+        <string>__HOME__/.local/bin/hpc</string>
         <string>sync</string>
         <string>--days</string>
         <string>7</string>
@@ -31,9 +31,9 @@
         <string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     </dict>
     <key>StandardOutPath</key>
-    <string>__HOME__/Library/Logs/com.chagui.claude-pulse/sync.log</string>
+    <string>__HOME__/Library/Logs/com.chagui.hippoclaudus/sync.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/Library/Logs/com.chagui.claude-pulse/sync.err</string>
+    <string>__HOME__/Library/Logs/com.chagui.hippoclaudus/sync.err</string>
     <key>Nice</key>
     <integer>10</integer>
     <key>SoftResourceLimits</key>

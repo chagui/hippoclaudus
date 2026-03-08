@@ -9,4 +9,4 @@ DispatchQueue.main.async {
     NSApp.setActivationPolicy(.accessory)
 }
 
-ClaudePulseApp.main()
+HippoApp.main()

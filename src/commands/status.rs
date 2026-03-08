@@ -1,9 +1,9 @@
 use anyhow::Result;
 
-use claude_pulse::config::Config;
-use claude_pulse::session::extract_session_metadata;
-use claude_pulse::state::SyncState;
-use claude_pulse::{discover_active_sessions, discover_sessions, vault_note_count};
+use hippoclaudus::config::Config;
+use hippoclaudus::session::extract_session_metadata;
+use hippoclaudus::state::SyncState;
+use hippoclaudus::{discover_active_sessions, discover_sessions, vault_note_count};
 
 use crate::helpers::{file_mtime, session_id_from_path, vault_size_kb};
 

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::process;
 
-use claude_pulse::config::Config;
+use hippoclaudus::config::Config;
 
 mod commands;
 mod helpers;
@@ -10,8 +10,10 @@ mod prompt;
 mod sync;
 
 #[derive(Parser)]
-#[command(name = "claude-pulse")]
-#[command(about = "Claude Code companion — session monitoring, knowledge sync, and vault search")]
+#[command(name = "hpc")]
+#[command(
+    about = "Hippoclaudus — Claude Code companion for session monitoring, knowledge sync, and vault search"
+)]
 struct Cli {
     /// Enable verbose logging (RUST_LOG=debug)
     #[arg(long, short, global = true)]

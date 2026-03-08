@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudePulse",
+    name: "Hippo",
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(
@@ -12,16 +12,16 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "ClaudePulse",
-            path: "Sources/ClaudePulse"
+            name: "Hippo",
+            path: "Sources/Hippo"
         ),
         .testTarget(
-            name: "ClaudePulseTests",
+            name: "HippoTests",
             dependencies: [
-                "ClaudePulse",
+                "Hippo",
                 .product(name: "Testing", package: "swift-testing"),
             ],
-            path: "Tests/ClaudePulseTests"
+            path: "Tests/HippoTests"
         ),
     ]
 )

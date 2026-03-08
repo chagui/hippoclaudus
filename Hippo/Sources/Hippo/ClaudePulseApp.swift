@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct ClaudePulseApp: App {
+struct HippoApp: App {
     @StateObject private var statusProvider: StatusProvider
     @StateObject private var searchProvider = SearchProvider()
     @StateObject private var enrichmentProvider: GitEnrichmentProvider
@@ -77,7 +77,7 @@ enum MenuBarIcon {
             // No active sessions — return a template image (native menu bar rendering)
             guard let baseImage = NSImage(
                 systemSymbolName: "brain.head.profile",
-                accessibilityDescription: "Claude Pulse"
+                accessibilityDescription: "Hippoclaudus"
             ), let image = baseImage.withSymbolConfiguration(symbolConfig) else {
                 // Fallback: simple text-based image if symbol is unavailable
                 let fallback = NSImage(size: NSSize(width: 18, height: 18))
@@ -91,7 +91,7 @@ enum MenuBarIcon {
         // Active sessions — composite brain + colored status dot
         guard let baseBrain = NSImage(
             systemSymbolName: "brain.head.profile.fill",
-            accessibilityDescription: "Claude Pulse"
+            accessibilityDescription: "Hippoclaudus"
         ), let brainImage = baseBrain.withSymbolConfiguration(symbolConfig) else {
             let fallback = NSImage(size: NSSize(width: 18, height: 18))
             return fallback

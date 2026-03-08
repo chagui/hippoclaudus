@@ -1,7 +1,7 @@
 @preconcurrency import Foundation
 
 enum CLIRunner {
-    static let primaryPath = NSString("~/.local/bin/claude-pulse").expandingTildeInPath
+    static let primaryPath = NSString("~/.local/bin/hpc").expandingTildeInPath
 
     /// Default timeout for CLI operations (30 seconds).
     static let defaultTimeout: UInt64 = 30_000_000_000 // nanoseconds
@@ -147,11 +147,11 @@ enum CLIRunnerError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .binaryNotFound:
-            return "claude-pulse binary not found at \(CLIRunner.primaryPath). Run install.sh first."
+            return "hpc binary not found at \(CLIRunner.primaryPath). Run scripts/install.sh first."
         case .nonZeroExit(let code):
-            return "claude-pulse exited with code \(code)"
+            return "hpc exited with code \(code)"
         case .timeout:
-            return "claude-pulse timed out"
+            return "hpc timed out"
         }
     }
 }

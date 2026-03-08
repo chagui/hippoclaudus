@@ -52,11 +52,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
-        working-directory: ClaudePulse
+        working-directory: Hippo
         run: swift build -c release
 
       - name: Test
-        working-directory: ClaudePulse
+        working-directory: Hippo
         run: swift test
 
   coverage:
@@ -90,11 +90,11 @@ jobs:
         run: cargo llvm-cov nextest --fail-under-lines 80
 
       - name: Swift coverage
-        working-directory: ClaudePulse
+        working-directory: Hippo
         run: |
           swift test --enable-code-coverage
 
-          BIN="$(find .build -path "*/ClaudePulsePackageTests.xctest/Contents/MacOS/ClaudePulsePackageTests" -type f | head -1)"
+          BIN="$(find .build -path "*/HippoPackageTests.xctest/Contents/MacOS/HippoPackageTests" -type f | head -1)"
           PROFDATA="$(find .build -name default.profdata | head -1)"
 
           if [[ -z "$BIN" || -z "$PROFDATA" ]]; then

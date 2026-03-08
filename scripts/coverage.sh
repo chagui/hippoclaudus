@@ -51,11 +51,11 @@ run_rust() {
 run_swift() {
   echo "=== Swift Coverage ==="
 
-  cd "$ROOT/ClaudePulse"
+  cd "$ROOT/Hippo"
   swift test --enable-code-coverage
 
   # The test binary lives inside a .xctest bundle under the platform-specific build dir
-  BIN="$(find .build -path "*/ClaudePulsePackageTests.xctest/Contents/MacOS/ClaudePulsePackageTests" -type f | head -1)"
+  BIN="$(find .build -path "*/HippoPackageTests.xctest/Contents/MacOS/HippoPackageTests" -type f | head -1)"
   PROFDATA="$(find .build -name default.profdata | head -1)"
 
   if [[ -z "$BIN" || -z "$PROFDATA" ]]; then

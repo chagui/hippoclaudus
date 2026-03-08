@@ -1,10 +1,10 @@
 use anyhow::Result;
 
-use claude_pulse::config::Config;
-use claude_pulse::prompts::detect_prompt_files;
-use claude_pulse::session::extract_session;
-use claude_pulse::state::SyncState;
-use claude_pulse::{discover_active_sessions, discover_sessions};
+use hippoclaudus::config::Config;
+use hippoclaudus::prompts::detect_prompt_files;
+use hippoclaudus::session::extract_session;
+use hippoclaudus::state::SyncState;
+use hippoclaudus::{discover_active_sessions, discover_sessions};
 
 pub fn cmd_prompts(config: &Config, days: u32, threshold: f64, json: bool) -> Result<()> {
     let state = SyncState::open(config)?;
@@ -50,7 +50,7 @@ pub fn cmd_prompts(config: &Config, days: u32, threshold: f64, json: bool) -> Re
             .iter()
             .any(|p| p.file_path == dbp.file_path && p.session_id == dbp.session_id)
         {
-            all_prompts.push(claude_pulse::prompts::PromptFileInfo {
+            all_prompts.push(hippoclaudus::prompts::PromptFileInfo {
                 file_path: dbp.file_path.clone(),
                 session_id: dbp.session_id.clone(),
                 project_cwd: dbp.project_cwd.clone(),

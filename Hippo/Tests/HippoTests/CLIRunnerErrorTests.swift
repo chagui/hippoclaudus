@@ -1,6 +1,6 @@
 import Testing
 
-@testable import ClaudePulse
+@testable import Hippo
 
 @Suite struct CLIRunnerErrorTests {
 
@@ -8,14 +8,14 @@ import Testing
         let error = CLIRunnerError.binaryNotFound
         let description = error.errorDescription!
         #expect(description.contains("not found"), "Expected 'not found' in: \(description)")
-        #expect(description.contains("claude-pulse"), "Expected 'claude-pulse' in: \(description)")
+        #expect(description.contains("hpc"), "Expected 'hpc' in: \(description)")
     }
 
     @Test func nonZeroExitDescription() {
         let error = CLIRunnerError.nonZeroExit(42)
         let description = error.errorDescription!
         #expect(description.contains("42"), "Expected exit code in: \(description)")
-        #expect(description.contains("claude-pulse"), "Expected 'claude-pulse' in: \(description)")
+        #expect(description.contains("hpc"), "Expected 'hpc' in: \(description)")
     }
 
     @Test func timeoutDescription() {

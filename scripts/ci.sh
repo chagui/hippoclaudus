@@ -29,11 +29,11 @@ pass "cargo nextest run"
 
 # --- Swift ---
 step "swift build"
-(cd ClaudePulse && swift build -c release) || fail "swift build"
+(cd Hippo && swift build -c release) || fail "swift build"
 pass "swift build"
 
 step "swift test"
-(cd ClaudePulse && swift test) || fail "swift test"
+(cd Hippo && swift test) || fail "swift test"
 pass "swift test"
 
 printf '\n\033[32m=== All CI checks passed ===\033[0m\n'
