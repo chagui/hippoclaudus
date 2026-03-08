@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A macOS companion tool for Claude Code that monitors active sessions, extracts knowledge from JSONL conversation logs, and syncs it to an Obsidian vault. Two components: a Rust CLI (`hpc`) and a Swift menu bar app (`Hippo/`).
 
+## Dev Setup
+
+```bash
+./scripts/setup.sh  # installs cargo-nextest, cargo-llvm-cov, lefthook, git hooks
+```
+
+Pre-commit hooks (via [lefthook](https://github.com/evilmartians/lefthook), config in `lefthook.yml`):
+- **Rust**: `cargo fmt --check`, `cargo clippy -- -D warnings`
+- **Shell**: `shfmt -d`, `shellcheck`
+- **Swift**: `swiftformat --lint`, `swift build -c release`
+- **YAML**: `yamllint`
+
 ## Build & Test Commands
 
 ```bash
