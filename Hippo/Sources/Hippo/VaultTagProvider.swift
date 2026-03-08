@@ -3,24 +3,31 @@ import SwiftUI
 
 // MARK: - Models
 
-struct TagDocument: Identifiable, Sendable {
+struct TagDocument: Identifiable {
     let title: String
     let filePath: String
     let fileName: String
 
-    var id: String { filePath }
+    var id: String {
+        filePath
+    }
 
     var fileNameWithoutExtension: String {
         (fileName as NSString).deletingPathExtension
     }
 }
 
-struct VaultTag: Identifiable, Sendable {
+struct VaultTag: Identifiable {
     let name: String
     let documents: [TagDocument]
 
-    var documentCount: Int { documents.count }
-    var id: String { name }
+    var documentCount: Int {
+        documents.count
+    }
+
+    var id: String {
+        name
+    }
 }
 
 // MARK: - Provider
@@ -29,13 +36,13 @@ struct VaultTag: Identifiable, Sendable {
 final class VaultTagProvider: ObservableObject {
     @Published var tags: [VaultTag] = []
 
-    nonisolated private static let vaultPath = AppConfig.vaultPath
+    private nonisolated static let vaultPath = AppConfig.vaultPath
 
     func refresh() async {
         let results = await Task.detached {
             Self.scanTags()
         }.value
-        self.tags = results
+        tags = results
     }
 
     func openInObsidian(document: TagDocument) {
@@ -115,12 +122,12 @@ final class VaultTagProvider: ObservableObject {
                     tags = [inline.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))]
                     inTags = false
                 }
-            } else if inTags && trimmed.hasPrefix("- ") {
+            } else if inTags, trimmed.hasPrefix("- ") {
                 let tag = String(trimmed.dropFirst(2))
                     .trimmingCharacters(in: .whitespaces)
                     .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                 if !tag.isEmpty { tags.append(tag) }
-            } else if !trimmed.isEmpty && !trimmed.hasPrefix("-") {
+            } else if !trimmed.isEmpty, !trimmed.hasPrefix("-") {
                 inTags = false
             }
         }

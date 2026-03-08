@@ -78,7 +78,7 @@ mkdir -p "$LOG_DIR"
 
 echo "==> Installing LaunchAgent..."
 # Template the plist: replace __HOME__ with actual $HOME
-sed "s|__HOME__|$HOME|g" "$REPO_DIR/$PLIST_NAME" > ~/Library/LaunchAgents/$PLIST_NAME
+sed "s|__HOME__|$HOME|g" "$REPO_DIR/$PLIST_NAME" >~/Library/LaunchAgents/$PLIST_NAME
 
 # Unload first if already loaded (ignore errors)
 launchctl bootout "gui/$(id -u)/com.chagui.hippoclaudus" 2>/dev/null || true

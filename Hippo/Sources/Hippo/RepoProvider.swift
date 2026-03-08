@@ -3,13 +3,15 @@ import SwiftUI
 
 // MARK: - Models
 
-struct RepoSession: Identifiable, Sendable {
+struct RepoSession: Identifiable {
     let sessionId: String
     let lastModified: Date
     let gitBranch: String
     let worktreeLabel: String?
 
-    var id: String { sessionId }
+    var id: String {
+        sessionId
+    }
 
     /// Formats lastModified as a relative time string.
     var timeAgo: String {
@@ -30,15 +32,23 @@ struct RepoSession: Identifiable, Sendable {
     }
 }
 
-struct RepoInfo: Identifiable, Sendable {
+struct RepoInfo: Identifiable {
     let projectPath: String
     let projectName: String
     let sessions: [RepoSession]
     let worktreePaths: Set<String>
 
-    var sessionCount: Int { sessions.count }
-    var worktreeCount: Int { worktreePaths.count }
-    var id: String { projectPath }
+    var sessionCount: Int {
+        sessions.count
+    }
+
+    var worktreeCount: Int {
+        worktreePaths.count
+    }
+
+    var id: String {
+        projectPath
+    }
 }
 
 // MARK: - Provider
@@ -47,14 +57,14 @@ struct RepoInfo: Identifiable, Sendable {
 final class RepoProvider: ObservableObject {
     @Published var repos: [RepoInfo] = []
 
-    nonisolated private static let claudeProjectsPath = AppConfig.projectsPath
+    private nonisolated static let claudeProjectsPath = AppConfig.projectsPath
 
     func refresh(enrichments: [String: SessionEnrichment] = [:]) async {
         let enrichmentsCopy = enrichments
         let results = await Task.detached {
             Self.scanRepos(enrichments: enrichmentsCopy)
         }.value
-        self.repos = results
+        repos = results
     }
 
     private nonisolated static func scanRepos(enrichments: [String: SessionEnrichment]) -> [RepoInfo] {
@@ -88,13 +98,12 @@ final class RepoProvider: ObservableObject {
                 let branch = extractGitBranch(filePath: filePath) ?? "unknown"
 
                 // Determine worktree label from enrichment or heuristic
-                let wtLabel: String?
-                if let enrichment = enrichments[sessionId], let label = enrichment.worktreeLabel {
-                    wtLabel = label
+                let wtLabel: String? = if let enrichment = enrichments[sessionId], let label = enrichment.worktreeLabel {
+                    label
                 } else if let cwd = extractCwd(filePath: filePath) {
-                    wtLabel = detectWorktreeLabelFromCwd(cwd)
+                    detectWorktreeLabelFromCwd(cwd)
                 } else {
-                    wtLabel = nil
+                    nil
                 }
 
                 if let label = wtLabel {
@@ -120,7 +129,7 @@ final class RepoProvider: ObservableObject {
                 projectPath: effectivePath,
                 projectName: effectiveName,
                 sessions: sessions,
-                worktreePaths: worktreePaths
+                worktreePaths: worktreePaths,
             ))
         }
 
@@ -156,7 +165,9 @@ final class RepoProvider: ObservableObject {
 
         for (root, indices) in rootToIndices {
             guard !indices.isEmpty else { continue }
-            for idx in indices { consumed.insert(idx) }
+            for idx in indices {
+                consumed.insert(idx)
+            }
 
             if indices.count == 1 {
                 merged.append(repos[indices[0]])
@@ -181,7 +192,7 @@ final class RepoProvider: ObservableObject {
                 projectPath: root,
                 projectName: projectNameFromPath(root),
                 sessions: allSessions,
-                worktreePaths: allWorktreePaths
+                worktreePaths: allWorktreePaths,
             ))
         }
 

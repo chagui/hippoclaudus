@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct RepoProviderTests {
-
+struct RepoProviderTests {
     // MARK: - RepoSession.timeAgo
 
     @Test func timeAgoLessThanOneMinute() {
@@ -12,7 +10,7 @@ import Testing
             sessionId: "abc",
             lastModified: Date().addingTimeInterval(-30),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.timeAgo == "<1m ago")
     }
@@ -22,7 +20,7 @@ import Testing
             sessionId: "abc",
             lastModified: Date().addingTimeInterval(-300),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.timeAgo == "5m ago")
     }
@@ -32,7 +30,7 @@ import Testing
             sessionId: "abc",
             lastModified: Date().addingTimeInterval(-7200),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.timeAgo == "2h ago")
     }
@@ -40,9 +38,9 @@ import Testing
     @Test func timeAgoDays() {
         let session = RepoSession(
             sessionId: "abc",
-            lastModified: Date().addingTimeInterval(-172800),
+            lastModified: Date().addingTimeInterval(-172_800),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.timeAgo == "2d ago")
     }
@@ -52,7 +50,7 @@ import Testing
             sessionId: "abc",
             lastModified: Date().addingTimeInterval(-86400 * 45),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.timeAgo == "1mo ago")
     }
@@ -64,7 +62,7 @@ import Testing
             sessionId: "abcdefghijklmnop",
             lastModified: Date(),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.shortId == "abcdefgh")
     }
@@ -74,21 +72,21 @@ import Testing
             sessionId: "abc",
             lastModified: Date(),
             gitBranch: "main",
-            worktreeLabel: nil
+            worktreeLabel: nil,
         )
         #expect(session.shortId == "abc")
     }
 
     // MARK: - extractProjectInfoWithWorktree
 
-    @Test func extractProjectInfoValid() {
+    @Test func extractProjectInfoValid() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let jsonl = #"{"type":"user","cwd":"/Users/dev/my-org/my-project","message":{"content":"hello"}}"# + "\n"
         let fileName = "session.jsonl"
-        try! jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
 
         let (path, name, worktreeRoot) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         #expect(path == "/Users/dev/my-org/my-project")
@@ -96,14 +94,14 @@ import Testing
         #expect(worktreeRoot == nil)
     }
 
-    @Test func extractProjectInfoMissingCwd() {
+    @Test func extractProjectInfoMissingCwd() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let jsonl = #"{"type":"user","message":{"content":"hello"}}"# + "\n"
         let fileName = "session.jsonl"
-        try! jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
 
         let (path, name, worktreeRoot) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         #expect(path == nil)
@@ -111,14 +109,14 @@ import Testing
         #expect(worktreeRoot == nil)
     }
 
-    @Test func extractProjectInfoMalformedJSON() {
+    @Test func extractProjectInfoMalformedJSON() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let jsonl = "not valid json\n"
         let fileName = "session.jsonl"
-        try! jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
 
         let (path, name, worktreeRoot) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         #expect(path == nil)
@@ -128,14 +126,14 @@ import Testing
 
     // MARK: - extractProjectInfoWithWorktree: worktree path detection
 
-    @Test func extractProjectInfoWorktreePath() {
+    @Test func extractProjectInfoWorktreePath() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let jsonl = #"{"type":"user","cwd":"/Users/dev/my-project/.claude/worktrees/fix-bug","message":{"content":"hello"}}"# + "\n"
         let fileName = "session.jsonl"
-        try! jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
 
         let (path, name, worktreeRoot) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         #expect(path == "/Users/dev/my-project/.claude/worktrees/fix-bug")
@@ -150,9 +148,9 @@ import Testing
         #expect(worktreeRoot == nil)
     }
 
-    @Test func extractProjectInfoSkipsNonUserMessages() {
+    @Test func extractProjectInfoSkipsNonUserMessages() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let jsonl = """
@@ -161,7 +159,7 @@ import Testing
         {"type":"user","cwd":"/Users/dev/org/repo","message":{"content":"hello"}}
         """ + "\n"
         let fileName = "session.jsonl"
-        try! jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
 
         let (path, name, _) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         #expect(path == "/Users/dev/org/repo")
@@ -197,7 +195,7 @@ import Testing
             sessionId: "wt-session",
             lastModified: Date(),
             gitBranch: "fix-auth",
-            worktreeLabel: "fix-auth-worktree"
+            worktreeLabel: "fix-auth-worktree",
         )
         #expect(session.worktreeLabel == "fix-auth-worktree")
     }
@@ -213,7 +211,7 @@ import Testing
             projectPath: "/test",
             projectName: "test/repo",
             sessions: sessions,
-            worktreePaths: ["wt1", "wt2"]
+            worktreePaths: ["wt1", "wt2"],
         )
         #expect(info.sessionCount == 2)
         #expect(info.worktreeCount == 2)
@@ -222,33 +220,33 @@ import Testing
 
     // MARK: - extractGitBranch
 
-    @Test func extractGitBranchValid() {
+    @Test func extractGitBranchValid() throws {
         let tmp = NSTemporaryDirectory() + UUID().uuidString + ".jsonl"
         defer { try? FileManager.default.removeItem(atPath: tmp) }
 
         let jsonl = #"{"type":"user","gitBranch":"feature/test","message":{"content":"hello"}}"# + "\n"
-        try! jsonl.write(toFile: tmp, atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: tmp, atomically: true, encoding: .utf8)
 
         let branch = RepoProvider.extractGitBranch(filePath: tmp)
         #expect(branch == "feature/test")
     }
 
-    @Test func extractGitBranchMissing() {
+    @Test func extractGitBranchMissing() throws {
         let tmp = NSTemporaryDirectory() + UUID().uuidString + ".jsonl"
         defer { try? FileManager.default.removeItem(atPath: tmp) }
 
         let jsonl = #"{"type":"user","message":{"content":"hello"}}"# + "\n"
-        try! jsonl.write(toFile: tmp, atomically: true, encoding: .utf8)
+        try jsonl.write(toFile: tmp, atomically: true, encoding: .utf8)
 
         let branch = RepoProvider.extractGitBranch(filePath: tmp)
         #expect(branch == nil)
     }
 
-    @Test func extractGitBranchEmptyFile() {
+    @Test func extractGitBranchEmptyFile() throws {
         let tmp = NSTemporaryDirectory() + UUID().uuidString + ".jsonl"
         defer { try? FileManager.default.removeItem(atPath: tmp) }
 
-        try! "".write(toFile: tmp, atomically: true, encoding: .utf8)
+        try "".write(toFile: tmp, atomically: true, encoding: .utf8)
 
         let branch = RepoProvider.extractGitBranch(filePath: tmp)
         #expect(branch == nil)

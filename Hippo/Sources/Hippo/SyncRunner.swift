@@ -20,7 +20,7 @@ final class SyncRunner: ObservableObject {
                 }
             }
         } catch {
-            self.errorMessage = error.localizedDescription
+            errorMessage = error.localizedDescription
         }
 
         isRunning = false

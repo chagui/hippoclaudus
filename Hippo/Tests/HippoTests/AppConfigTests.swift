@@ -1,8 +1,7 @@
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct AppConfigTests {
+struct AppConfigTests {
     @Test func defaults() {
         let vault = AppConfig.vaultPath
         let projects = AppConfig.projectsPath

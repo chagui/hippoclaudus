@@ -15,7 +15,7 @@ struct HippoApp: App {
         let status = StatusProvider(
             enrichmentProvider: enrichment,
             repoProvider: repo,
-            vaultTagProvider: tags
+            vaultTagProvider: tags,
         )
         _statusProvider = StateObject(wrappedValue: status)
         _enrichmentProvider = StateObject(wrappedValue: enrichment)
@@ -30,18 +30,18 @@ struct HippoApp: App {
                 searchProvider: searchProvider,
                 enrichmentProvider: enrichmentProvider,
                 repoProvider: repoProvider,
-                vaultTagProvider: vaultTagProvider
+                vaultTagProvider: vaultTagProvider,
             )
-                .frame(width: 380, height: MenuBarLayout.panelHeight)
-                .onAppear {
-                    Task {
-                        await statusProvider.refresh()
-                    }
+            .frame(width: 380, height: MenuBarLayout.panelHeight)
+            .onAppear {
+                Task {
+                    await statusProvider.refresh()
                 }
+            }
         } label: {
             Image(nsImage: MenuBarIcon.render(
                 hasActive: statusProvider.activeSessionCount > 0,
-                anyWaiting: statusProvider.anySessionWaiting
+                anyWaiting: statusProvider.anySessionWaiting,
             ))
         }
         .menuBarExtraStyle(.window)
@@ -58,7 +58,7 @@ enum MenuBarLayout {
         // The menu bar lives on the screen with the key window, or the main screen
         let screen = NSScreen.main ?? NSScreen.screens.first
         guard let screen else { return 520 }
-        let usable = screen.visibleFrame.height  // excludes menu bar + dock
+        let usable = screen.visibleFrame.height // excludes menu bar + dock
         let desired = usable * 0.70
         return min(max(desired, 520), 900)
     }
@@ -77,7 +77,7 @@ enum MenuBarIcon {
             // No active sessions — return a template image (native menu bar rendering)
             guard let baseImage = NSImage(
                 systemSymbolName: "brain.head.profile",
-                accessibilityDescription: "Hippoclaudus"
+                accessibilityDescription: "Hippoclaudus",
             ), let image = baseImage.withSymbolConfiguration(symbolConfig) else {
                 // Fallback: simple text-based image if symbol is unavailable
                 let fallback = NSImage(size: NSSize(width: 18, height: 18))
@@ -91,10 +91,9 @@ enum MenuBarIcon {
         // Active sessions — composite brain + colored status dot
         guard let baseBrain = NSImage(
             systemSymbolName: "brain.head.profile.fill",
-            accessibilityDescription: "Hippoclaudus"
+            accessibilityDescription: "Hippoclaudus",
         ), let brainImage = baseBrain.withSymbolConfiguration(symbolConfig) else {
-            let fallback = NSImage(size: NSSize(width: 18, height: 18))
-            return fallback
+            return NSImage(size: NSSize(width: 18, height: 18))
         }
 
         let brainSize = brainImage.size
@@ -114,7 +113,7 @@ enum MenuBarIcon {
                 in: NSRect(origin: .zero, size: brainSize),
                 from: .zero,
                 operation: .sourceOver,
-                fraction: 1.0
+                fraction: 1.0,
             )
 
             // Draw colored status dot in bottom-right
@@ -123,7 +122,7 @@ enum MenuBarIcon {
                 x: compositeSize.width - dotSize - 0.5,
                 y: 1,
                 width: dotSize,
-                height: dotSize
+                height: dotSize,
             )
             let dotColor: NSColor = anyWaiting ? .systemYellow : .systemGreen
             dotColor.setFill()

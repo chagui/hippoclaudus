@@ -118,8 +118,8 @@ enum CLIRunner {
                 buffer.append(chunk)
 
                 while let newlineRange = buffer.range(of: Data([0x0A])) {
-                    let lineData = buffer.subdata(in: buffer.startIndex..<newlineRange.lowerBound)
-                    buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
+                    let lineData = buffer.subdata(in: buffer.startIndex ..< newlineRange.lowerBound)
+                    buffer.removeSubrange(buffer.startIndex ... newlineRange.lowerBound)
                     if let line = String(data: lineData, encoding: .utf8) {
                         onLine(line)
                     }
@@ -147,11 +147,11 @@ enum CLIRunnerError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .binaryNotFound:
-            return "hpc binary not found at \(CLIRunner.primaryPath). Run scripts/install.sh first."
-        case .nonZeroExit(let code):
-            return "hpc exited with code \(code)"
+            "hpc binary not found at \(CLIRunner.primaryPath). Run scripts/install.sh first."
+        case let .nonZeroExit(code):
+            "hpc exited with code \(code)"
         case .timeout:
-            return "hpc timed out"
+            "hpc timed out"
         }
     }
 }

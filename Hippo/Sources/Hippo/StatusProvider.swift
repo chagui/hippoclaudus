@@ -27,7 +27,7 @@ final class StatusProvider: ObservableObject {
     init(
         enrichmentProvider: GitEnrichmentProvider,
         repoProvider: RepoProvider,
-        vaultTagProvider: VaultTagProvider
+        vaultTagProvider: VaultTagProvider,
     ) {
         self.enrichmentProvider = enrichmentProvider
         self.repoProvider = repoProvider
@@ -54,15 +54,15 @@ final class StatusProvider: ObservableObject {
         do {
             let data = try await CLIRunner.run(arguments: ["status"])
             let parsed = try JSONDecoder().decode(StatusResponse.self, from: data)
-            self.lastSyncAgo = parsed.lastSyncAgo ?? "Never"
-            self.unprocessed = parsed.unprocessed ?? 0
-            self.processed = parsed.processed ?? 0
-            self.vaultNotes = parsed.vaultNotes ?? 0
-            self.activeSessionCount = parsed.activeSessionCount ?? 0
-            self.activeSessions = parsed.activeSessions ?? []
-            self.errorMessage = nil
+            lastSyncAgo = parsed.lastSyncAgo ?? "Never"
+            unprocessed = parsed.unprocessed ?? 0
+            processed = parsed.processed ?? 0
+            vaultNotes = parsed.vaultNotes ?? 0
+            activeSessionCount = parsed.activeSessionCount ?? 0
+            activeSessions = parsed.activeSessions ?? []
+            errorMessage = nil
 
-            let sessions = self.activeSessions
+            let sessions = activeSessions
             refreshTasks.forEach { $0.cancel() }
             refreshTasks.removeAll()
             refreshTasks.append(Task {
@@ -73,7 +73,7 @@ final class StatusProvider: ObservableObject {
                 await self.repoProvider.refresh(enrichments: self.enrichmentProvider.enrichments)
             })
         } catch {
-            self.errorMessage = error.localizedDescription
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -120,7 +120,7 @@ struct StatusResponse: Decodable {
     }
 }
 
-struct AggregateStatsResponse: Decodable, Sendable {
+struct AggregateStatsResponse: Decodable {
     let sessions: Int?
     let agentTimeMs: Int?
     let userTimeMs: Int?
@@ -144,7 +144,7 @@ struct AggregateStatsResponse: Decodable, Sendable {
     }
 }
 
-struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
+struct ActiveSessionResponse: Decodable, Identifiable {
     let sessionId: String
     let projectName: String
     let projectCwd: String
@@ -171,7 +171,9 @@ struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
     /// Canonical repo root when session is inside a Claude Code worktree (from Rust heuristic).
     let worktreeRoot: String?
 
-    var id: String { sessionId }
+    var id: String {
+        sessionId
+    }
 
     /// Human-friendly model label (e.g. "Opus 4.6", "Sonnet 4.6").
     var modelLabel: String {
@@ -186,8 +188,8 @@ struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
         let total = totalInputTokens + totalOutputTokens
         if total >= 1_000_000 {
             return String(format: "%.1fM", Double(total) / 1_000_000)
-        } else if total >= 1_000 {
-            return String(format: "%.0fK", Double(total) / 1_000)
+        } else if total >= 1000 {
+            return String(format: "%.0fK", Double(total) / 1000)
         }
         return "\(total)"
     }
@@ -241,7 +243,9 @@ struct ActiveSessionResponse: Decodable, Identifiable, Sendable {
         return Self.formatDuration(since: start)
     }
 
-    var isWaiting: Bool { state == "waiting" }
+    var isWaiting: Bool {
+        state == "waiting"
+    }
 
     static func formatDuration(since start: Date) -> String {
         let elapsed = Int(Date().timeIntervalSince(start))

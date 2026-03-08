@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct CLIRunnerTests {
-
+struct CLIRunnerTests {
     // MARK: - resolvedBinaryPath
 
     @Test func resolvedBinaryPathReturnsNilWhenMissing() {
@@ -69,7 +67,7 @@ import Testing
             Issue.record("Expected non-zero exit error")
         } catch let error as CLIRunnerError {
             switch error {
-            case .nonZeroExit(let code):
+            case let .nonZeroExit(code):
                 #expect(code != 0)
             default:
                 Issue.record("Expected nonZeroExit, got \(error)")
@@ -78,14 +76,14 @@ import Testing
     }
 }
 
-// CLIRunnerError needs Equatable for test assertions
+/// CLIRunnerError needs Equatable for test assertions
 extension CLIRunnerError: Equatable {
     public static func == (lhs: CLIRunnerError, rhs: CLIRunnerError) -> Bool {
         switch (lhs, rhs) {
-        case (.binaryNotFound, .binaryNotFound): return true
-        case (.timeout, .timeout): return true
-        case (.nonZeroExit(let a), .nonZeroExit(let b)): return a == b
-        default: return false
+        case (.binaryNotFound, .binaryNotFound): true
+        case (.timeout, .timeout): true
+        case let (.nonZeroExit(a), .nonZeroExit(b)): a == b
+        default: false
         }
     }
 }

@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct StatusResponseDecodingTests {
-
+struct StatusResponseDecodingTests {
     @Test func decodeValidStatusJSON() throws {
         let json = """
         {
@@ -133,8 +131,8 @@ import Testing
 
         let stats = try #require(status.aggregateStats)
         #expect(stats.sessions == 15)
-        #expect(stats.agentTimeMs == 300000)
-        #expect(stats.userTimeMs == 120000)
+        #expect(stats.agentTimeMs == 300_000)
+        #expect(stats.userTimeMs == 120_000)
         #expect(stats.agentTimePct == 71.4)
         #expect(stats.userTimePct == 28.6)
         #expect(stats.writeCount == 50)
@@ -205,7 +203,7 @@ import Testing
         let data = json.data(using: .utf8)!
         let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
 
-        #expect(s.agentTimeMs == 180000)
+        #expect(s.agentTimeMs == 180_000)
         #expect(s.userTimeMs == 60000)
         #expect(s.agentTimePct == 75.0)
         #expect(s.userTimePct == 25.0)

@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct ActiveSessionResponseTests {
-
+struct ActiveSessionResponseTests {
     // MARK: - Factory helper
 
     private func makeSession(
@@ -17,7 +15,7 @@ import Testing
         turnCount: Int = 5,
         startedAt: String = "2025-01-01T00:00:00Z",
         exchangeCount: Int = 3,
-        state: String = "active"
+        state: String = "active",
     ) -> ActiveSessionResponse {
         let json: [String: Any] = [
             "session_id": "test-session-123",
@@ -86,9 +84,9 @@ import Testing
     }
 
     @Test func estimatedCostOpusMoreExpensive() {
-        let opus = makeSession(model: "claude-opus-4-6", totalInputTokens: 100_000, totalOutputTokens: 50_000)
-        let sonnet = makeSession(model: "claude-sonnet-4-6", totalInputTokens: 100_000, totalOutputTokens: 50_000)
-        let haiku = makeSession(model: "claude-haiku-4-5", totalInputTokens: 100_000, totalOutputTokens: 50_000)
+        let opus = makeSession(model: "claude-opus-4-6", totalInputTokens: 100_000, totalOutputTokens: 50000)
+        let sonnet = makeSession(model: "claude-sonnet-4-6", totalInputTokens: 100_000, totalOutputTokens: 50000)
+        let haiku = makeSession(model: "claude-haiku-4-5", totalInputTokens: 100_000, totalOutputTokens: 50000)
 
         let opusCost = parseCost(opus.estimatedCost)
         let sonnetCost = parseCost(sonnet.estimatedCost)
@@ -99,8 +97,8 @@ import Testing
     }
 
     @Test func estimatedCostMonotonicallyIncreasesWithTokens() {
-        let low = makeSession(totalInputTokens: 10_000, totalOutputTokens: 5_000)
-        let high = makeSession(totalInputTokens: 100_000, totalOutputTokens: 50_000)
+        let low = makeSession(totalInputTokens: 10000, totalOutputTokens: 5000)
+        let high = makeSession(totalInputTokens: 100_000, totalOutputTokens: 50000)
 
         let lowCost = parseCost(low.estimatedCost)
         let highCost = parseCost(high.estimatedCost)
@@ -121,7 +119,7 @@ import Testing
     }
 
     @Test func avgTurnDurationMinutesAndSeconds() {
-        let s = makeSession(avgTurnDurationMs: 90_000, turnCount: 1)
+        let s = makeSession(avgTurnDurationMs: 90000, turnCount: 1)
         #expect(s.avgTurnDuration == "1m 30s")
     }
 
@@ -269,22 +267,22 @@ import Testing
 
     // MARK: - estimatedCost with cache tokens
 
-    @Test func estimatedCostReducedByCacheRead() {
+    @Test func estimatedCostReducedByCacheRead() throws {
         let noCacheSonnet = makeSession(
             model: "claude-sonnet-4-6",
             totalInputTokens: 100_000,
-            totalOutputTokens: 10_000
+            totalOutputTokens: 10000,
         )
         let json: [String: Any] = [
             "session_id": "cache-1", "project_name": "test", "project_cwd": "/tmp",
             "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
             "exchange_count": 1, "model": "claude-sonnet-4-6",
-            "total_input_tokens": 100_000, "total_output_tokens": 10_000,
-            "total_cache_read_tokens": 80_000, "total_cache_creation_tokens": 0,
+            "total_input_tokens": 100_000, "total_output_tokens": 10000,
+            "total_cache_read_tokens": 80000, "total_cache_creation_tokens": 0,
             "avg_turn_duration_ms": 0, "turn_count": 0, "state": "active",
         ]
-        let data = try! JSONSerialization.data(withJSONObject: json)
-        let cachedSonnet = try! JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let cachedSonnet = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
 
         let noCacheCost = parseCost(noCacheSonnet.estimatedCost)
         let cachedCost = parseCost(cachedSonnet.estimatedCost)

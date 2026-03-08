@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct AdversarialTests {
-
+struct AdversarialTests {
     // MARK: - Helpers
 
     private func writeTempFile(_ data: Data, ext: String = "md") -> String {
@@ -20,22 +18,24 @@ import Testing
     // MARK: - Frontmatter parser: adversarial inputs
 
     @Test func frontmatterRandomBytes() {
-        for _ in 0..<20 {
-            let size = Int.random(in: 0...2048)
+        for _ in 0 ..< 20 {
+            let size = Int.random(in: 0 ... 2048)
             var bytes = [UInt8](repeating: 0, count: size)
-            for i in 0..<size { bytes[i] = UInt8.random(in: 0...255) }
+            for i in 0 ..< size {
+                bytes[i] = UInt8.random(in: 0 ... 255)
+            }
             let path = writeTempFile(Data(bytes))
             defer { try? FileManager.default.removeItem(atPath: path) }
 
             // Should not crash
-            let _ = SearchProvider.extractFrontmatter(filePath: path)
-            let _ = VaultTagProvider.extractFrontmatter(filePath: path)
+            _ = SearchProvider.extractFrontmatter(filePath: path)
+            _ = VaultTagProvider.extractFrontmatter(filePath: path)
         }
     }
 
     @Test func frontmatterDeeplyNested() {
         var content = "---\ntitle: Deep\ntags:\n"
-        for i in 0..<100 {
+        for i in 0 ..< 100 {
             content += "  - tag\(i)\n"
         }
         content += "---\n"
@@ -55,7 +55,7 @@ import Testing
 
         // Should not crash
         let (title, _) = SearchProvider.extractFrontmatter(filePath: path)
-        let _ = title
+        _ = title
     }
 
     @Test func frontmatterBinaryData() {
@@ -65,14 +65,14 @@ import Testing
         defer { try? FileManager.default.removeItem(atPath: path) }
 
         // Should not crash
-        let (_, _) = SearchProvider.extractFrontmatter(filePath: path)
+        _ = SearchProvider.extractFrontmatter(filePath: path)
     }
 
     // MARK: - JSONL parsers: adversarial inputs
 
-    @Test func extractProjectInfoMalformedJSONL() {
+    @Test func extractProjectInfoMalformedJSONL() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let malformedInputs = [
@@ -87,13 +87,13 @@ import Testing
 
         for (i, input) in malformedInputs.enumerated() {
             let fileName = "test\(i).jsonl"
-            try! input.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+            try input.write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
             // Should not crash
-            let (_, _, _) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
+            _ = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         }
     }
 
-    @Test func extractGitBranchMalformedJSONL() {
+    @Test func extractGitBranchMalformedJSONL() throws {
         let malformedInputs = [
             "",
             "not json",
@@ -105,19 +105,19 @@ import Testing
 
         for input in malformedInputs {
             let tmp = NSTemporaryDirectory() + UUID().uuidString + ".jsonl"
-            try! input.write(toFile: tmp, atomically: true, encoding: .utf8)
+            try input.write(toFile: tmp, atomically: true, encoding: .utf8)
             defer { try? FileManager.default.removeItem(atPath: tmp) }
 
             // Should not crash
-            let _ = RepoProvider.extractGitBranch(filePath: tmp)
+            _ = RepoProvider.extractGitBranch(filePath: tmp)
         }
     }
 
     // MARK: - Worktree path edge cases
 
-    @Test func extractProjectInfoWorktreeEdgeCases() {
+    @Test func extractProjectInfoWorktreeEdgeCases() throws {
         let dir = NSTemporaryDirectory() + UUID().uuidString
-        try! FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: dir) }
 
         let edgeCases = [
@@ -135,9 +135,9 @@ import Testing
 
         for (i, input) in edgeCases.enumerated() {
             let fileName = "wt-edge\(i).jsonl"
-            try! (input + "\n").write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
+            try (input + "\n").write(toFile: "\(dir)/\(fileName)", atomically: true, encoding: .utf8)
             // Should not crash
-            let (_, _, _) = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
+            _ = RepoProvider.extractProjectInfoWithWorktree(dirPath: dir, fileName: fileName)
         }
     }
 
@@ -152,7 +152,7 @@ import Testing
         ]
         for input in inputs {
             // Should not crash
-            let _ = RepoProvider.projectNameFromPath(input)
+            _ = RepoProvider.projectNameFromPath(input)
         }
     }
 
@@ -203,10 +203,10 @@ import Testing
         let session = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
 
         // Should not crash
-        let _ = session.totalTokensFormatted
-        let _ = session.estimatedCost
-        let _ = session.avgTurnDuration
-        let _ = session.modelLabel
+        _ = session.totalTokensFormatted
+        _ = session.estimatedCost
+        _ = session.avgTurnDuration
+        _ = session.modelLabel
     }
 
     @Test func emptyModelString() throws {
@@ -231,7 +231,7 @@ import Testing
         let session = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
 
         #expect(session.modelLabel == "")
-        let _ = session.estimatedCost
+        _ = session.estimatedCost
     }
 
     // MARK: - Malformed ISO8601 dates
@@ -268,7 +268,7 @@ import Testing
             let session = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
 
             // Should not crash
-            let _ = session.duration
+            _ = session.duration
         }
     }
 }

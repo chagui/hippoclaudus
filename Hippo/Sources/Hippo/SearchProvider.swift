@@ -21,8 +21,8 @@ final class SearchProvider: ObservableObject {
     @Published var isSearching: Bool = false
     @Published var errorMessage: String?
 
-    nonisolated private static let rgPath = "/opt/homebrew/bin/rg"
-    nonisolated private static let searchRoot = AppConfig.vaultPath
+    private nonisolated static let rgPath = "/opt/homebrew/bin/rg"
+    private nonisolated static let searchRoot = AppConfig.vaultPath
 
     private var searchTask: Task<Void, Never>?
 
@@ -85,7 +85,7 @@ final class SearchProvider: ObservableObject {
                 "--glob", "!.*",
                 "--glob", "!Templates/",
                 query,
-                searchRoot
+                searchRoot,
             ]
 
             let stdout = Pipe()
@@ -137,7 +137,7 @@ final class SearchProvider: ObservableObject {
                     fileName: fileName,
                     title: title ?? (fileName as NSString).deletingPathExtension,
                     tags: tags,
-                    excerpts: limitedExcerpts
+                    excerpts: limitedExcerpts,
                 ))
             }
 
@@ -191,12 +191,12 @@ final class SearchProvider: ObservableObject {
                     tags = [inline.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))]
                     inTags = false
                 }
-            } else if inTags && trimmed.hasPrefix("- ") {
+            } else if inTags, trimmed.hasPrefix("- ") {
                 let tag = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                 if !tag.isEmpty {
                     tags.append(tag)
                 }
-            } else if !trimmed.isEmpty && !trimmed.hasPrefix("-") {
+            } else if !trimmed.isEmpty, !trimmed.hasPrefix("-") {
                 inTags = false
             }
         }

@@ -32,7 +32,7 @@ struct ContentView: View {
                                     session: session,
                                     enrichment: enrichmentProvider.enrichments[session.id],
                                     isExpanded: expandedSessions.contains(session.id),
-                                    onToggle: { toggleSession(session.id) }
+                                    onToggle: { toggleSession(session.id) },
                                 )
                                 if session.id != statusProvider.activeSessions.last?.id {
                                     Divider().padding(.horizontal, 12)
@@ -46,7 +46,7 @@ struct ContentView: View {
                     ToolsSection(
                         statusProvider: statusProvider,
                         repoProvider: repoProvider,
-                        vaultTagProvider: vaultTagProvider
+                        vaultTagProvider: vaultTagProvider,
                     )
                 }
             }
@@ -114,8 +114,8 @@ struct TopBar: View {
 
 struct SectionHeader: View {
     let title: String
-    var actionIcon: String? = nil
-    var action: (() -> Void)? = nil
+    var actionIcon: String?
+    var action: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -147,7 +147,7 @@ struct SectionHeader: View {
 struct DetailRow: View {
     let label: String
     let value: String
-    var dotColor: Color? = nil
+    var dotColor: Color?
 
     var body: some View {
         HStack(spacing: 6) {
@@ -444,7 +444,7 @@ struct ToolsSection: View {
 struct ToolMenuItem: View {
     let icon: String
     let label: String
-    var count: Int? = nil
+    var count: Int?
     var isExpanded: Bool = false
     let action: () -> Void
 

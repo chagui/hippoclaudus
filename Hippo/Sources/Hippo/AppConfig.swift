@@ -13,13 +13,9 @@ enum AppConfig {
         return "\(home)/Library/Application Support/com.chagui.hippoclaudus/config.json"
     }()
 
-    private static let defaultVaultPath: String = {
-        NSString("~/Documents/Obsidian/Vaults/Claude").expandingTildeInPath
-    }()
+    private static let defaultVaultPath: String = NSString("~/Documents/Obsidian/Vaults/Claude").expandingTildeInPath
 
-    private static let defaultProjectsPath: String = {
-        NSString("~/.claude/projects").expandingTildeInPath
-    }()
+    private static let defaultProjectsPath: String = NSString("~/.claude/projects").expandingTildeInPath
 
     private static let cached: ConfigFile? = {
         guard let data = FileManager.default.contents(atPath: configPath),

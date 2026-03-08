@@ -1,10 +1,8 @@
 import Foundation
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct FrontmatterParsingTests {
-
+struct FrontmatterParsingTests {
     // MARK: - Helper: write temp file
 
     private func writeTempFile(_ content: String) -> String {
@@ -107,7 +105,7 @@ import Testing
 
         // Should not crash
         let (_, tags) = SearchProvider.extractFrontmatter(filePath: path)
-        let _ = tags
+        _ = tags
     }
 
     @Test func nonexistentFile() {

@@ -51,7 +51,7 @@ enum AboutWindowController {
             contentRect: NSRect(origin: .zero, size: hostingView.fittingSize),
             styleMask: [.titled, .closable],
             backing: .buffered,
-            defer: false
+            defer: false,
         )
         win.contentView = hostingView
         win.title = "About Hippoclaudus"

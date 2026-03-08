@@ -27,15 +27,15 @@ enum ExecutableFinder {
 
 // MARK: - Models
 
-struct PRInfo: Sendable {
+struct PRInfo {
     let number: Int
     let title: String
     let url: String
-    let state: String   // "OPEN", "MERGED", "CLOSED"
+    let state: String // "OPEN", "MERGED", "CLOSED"
     let isDraft: Bool
 }
 
-struct SessionEnrichment: Sendable {
+struct SessionEnrichment {
     let isGitRepo: Bool
     let isWorktree: Bool
     let canonicalRepoRoot: String?
@@ -52,7 +52,7 @@ final class GitEnrichmentProvider: ObservableObject {
     func enrich(sessions: [ActiveSessionResponse]) async {
         let results = await withTaskGroup(
             of: (String, SessionEnrichment).self,
-            returning: [String: SessionEnrichment].self
+            returning: [String: SessionEnrichment].self,
         ) { group in
             for session in sessions {
                 group.addTask {
@@ -67,7 +67,7 @@ final class GitEnrichmentProvider: ObservableObject {
             return dict
         }
 
-        self.enrichments = results
+        enrichments = results
     }
 
     private nonisolated func enrichSession(_ session: ActiveSessionResponse) async -> (String, SessionEnrichment) {
@@ -95,7 +95,7 @@ final class GitEnrichmentProvider: ObservableObject {
             executablePath: gitPath,
             arguments: ["rev-parse", "--is-inside-work-tree"],
             workingDirectory: cwd,
-            silent: true
+            silent: true,
         ) else {
             return false
         }
@@ -113,12 +113,12 @@ final class GitEnrichmentProvider: ObservableObject {
         async let commonDir = runCommand(
             executablePath: gitPath,
             arguments: ["rev-parse", "--git-common-dir"],
-            workingDirectory: cwd
+            workingDirectory: cwd,
         )
         async let gitDir = runCommand(
             executablePath: gitPath,
             arguments: ["rev-parse", "--git-dir"],
-            workingDirectory: cwd
+            workingDirectory: cwd,
         )
 
         guard let commonData = await commonDir,
@@ -155,7 +155,7 @@ final class GitEnrichmentProvider: ObservableObject {
             executablePath: ghPath,
             arguments: ["pr", "view", "--json", "number,title,url,state,isDraft"],
             workingDirectory: cwd,
-            silent: true  // Expected to fail when no PR exists for the branch
+            silent: true, // Expected to fail when no PR exists for the branch
         ) else {
             return nil
         }
@@ -177,7 +177,7 @@ final class GitEnrichmentProvider: ObservableObject {
             title: decoded.title,
             url: decoded.url,
             state: decoded.state,
-            isDraft: decoded.isDraft
+            isDraft: decoded.isDraft,
         )
     }
 
@@ -187,7 +187,7 @@ final class GitEnrichmentProvider: ObservableObject {
         executablePath: String,
         arguments: [String],
         workingDirectory: String,
-        silent: Bool = false
+        silent: Bool = false,
     ) async -> Data? {
         await Task.detached {
             let process = Process()

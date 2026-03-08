@@ -1,9 +1,7 @@
+@testable import Hippo
 import Testing
 
-@testable import Hippo
-
-@Suite struct CLIRunnerErrorTests {
-
+struct CLIRunnerErrorTests {
     @Test func binaryNotFoundDescription() {
         let error = CLIRunnerError.binaryNotFound
         let description = error.errorDescription!
