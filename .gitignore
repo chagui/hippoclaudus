@@ -3,3 +3,6 @@ target/
 .DS_Store
 *.db
 *.log
+
+# Override global gitignore: binary crates should commit their lock file
+!Cargo.lock

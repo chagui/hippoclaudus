@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   rust:
     runs-on: macos-latest
@@ -25,6 +29,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Check formatting
         run: cargo fmt --check
@@ -46,3 +51,51 @@ jobs:
       - name: Build
         working-directory: ClaudePulse
         run: swift build -c release
+
+      - name: Test
+        working-directory: ClaudePulse
+        run: swift test
+
+  coverage:
+    runs-on: macos-latest
+    needs: [rust, swift]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Rust coverage (fail under 80%)
+        run: cargo llvm-cov --fail-under-lines 80
+
+      - name: Swift coverage
+        working-directory: ClaudePulse
+        run: |
+          swift test --enable-code-coverage
+
+          BIN="$(find .build -path "*/ClaudePulsePackageTests.xctest/Contents/MacOS/ClaudePulsePackageTests" -type f | head -1)"
+          PROFDATA="$(find .build -name default.profdata | head -1)"
+
+          if [[ -z "$BIN" || -z "$PROFDATA" ]]; then
+            echo "Could not locate coverage artifacts."
+            exit 1
+          fi
+
+          xcrun llvm-cov report "$BIN" \
+            -instr-profile="$PROFDATA" \
+            -ignore-filename-regex='(.build/|Tests/)'
