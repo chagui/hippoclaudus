@@ -11,7 +11,7 @@ A macOS companion tool for Claude Code that monitors active sessions, extracts k
 ```bash
 # Rust CLI
 cargo build --release
-cargo test                    # unit + property-based + integration tests
+cargo nextest run             # unit + property-based + integration tests (requires cargo-nextest)
 cargo fmt --check             # formatting
 cargo clippy -- -D warnings   # lint (CI treats warnings as errors)
 
@@ -71,7 +71,7 @@ Rust tests use `proptest` for property-based testing and `tempfile` for isolated
 ./scripts/coverage.sh swift    # Swift only
 ```
 
-Rust coverage requires `cargo-llvm-cov` (`cargo install cargo-llvm-cov`). Swift coverage is built-in via `swift test --enable-code-coverage`.
+Rust coverage requires `cargo-llvm-cov` (`cargo install cargo-llvm-cov`) and `cargo-nextest` (`cargo install cargo-nextest`). Swift coverage is built-in via `swift test --enable-code-coverage`.
 
 **After any code change, run `./scripts/coverage.sh` and verify coverage does not regress.** Target thresholds:
 - Rust: **80%** line coverage (`cargo llvm-cov --fail-under-lines 80`)

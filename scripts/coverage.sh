@@ -32,13 +32,18 @@ run_rust() {
     exit 1
   fi
 
+  if ! command -v cargo-nextest &>/dev/null; then
+    echo "cargo-nextest not found. Install with: cargo install cargo-nextest"
+    exit 1
+  fi
+
   cd "$ROOT"
   if $HTML; then
-    cargo llvm-cov --html
+    cargo llvm-cov nextest --html
     echo "HTML report: target/llvm-cov/html/index.html"
     open target/llvm-cov/html/index.html
   else
-    cargo llvm-cov
+    cargo llvm-cov nextest
   fi
 }
 

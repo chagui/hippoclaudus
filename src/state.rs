@@ -38,7 +38,7 @@ impl SyncState {
     /// Open (or create) a SQLite database at an explicit path.
     ///
     /// This is the low-level constructor used by `open()` and by tests
-    /// (which pass a tempfile path to avoid touching the production DB).
+    /// that need to verify on-disk behavior (file creation, permissions).
     pub fn open_at(db_path: &std::path::Path) -> Result<Self> {
         let conn = Connection::open(db_path)
             .with_context(|| format!("Failed to open state database at {}", db_path.display()))?;
@@ -49,6 +49,15 @@ impl SyncState {
         // Enable WAL mode for crash safety and concurrent reads
         conn.execute_batch("PRAGMA journal_mode=WAL;").ok();
 
+        Self::from_connection(conn)
+    }
+
+    /// Wrap a pre-opened SQLite connection, running schema migrations.
+    ///
+    /// Callers control how the connection is created (on-disk, in-memory, etc.).
+    /// Production code should prefer `open()` or `open_at()` which set WAL mode
+    /// and file permissions.
+    pub fn from_connection(conn: Connection) -> Result<Self> {
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS processed_sessions (
                 session_id TEXT PRIMARY KEY,

@@ -23,9 +23,9 @@ step "cargo clippy"
 cargo clippy -- -D warnings || fail "cargo clippy"
 pass "cargo clippy"
 
-step "cargo test"
-cargo test || fail "cargo test"
-pass "cargo test"
+step "cargo nextest run"
+cargo nextest run || fail "cargo nextest run"
+pass "cargo nextest run"
 
 # --- Swift ---
 step "swift build"

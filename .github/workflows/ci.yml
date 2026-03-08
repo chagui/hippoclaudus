@@ -40,8 +40,11 @@ jobs:
       - name: Clippy
         run: cargo clippy -- -D warnings
 
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
       - name: Test
-        run: cargo test
+        run: cargo nextest run --profile ci
 
   swift:
     runs-on: macos-latest
@@ -80,8 +83,11 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
       - name: Rust coverage (fail under 80%)
-        run: cargo llvm-cov --fail-under-lines 80
+        run: cargo llvm-cov nextest --fail-under-lines 80
 
       - name: Swift coverage
         working-directory: ClaudePulse

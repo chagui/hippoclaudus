@@ -114,6 +114,6 @@ tail -f ~/Library/Logs/com.chagui.claude-pulse/sync.err
 cargo build && cargo clippy
 cd ClaudePulse && swift build
 
-# Run tests
-cargo test
+# Run tests (requires cargo-nextest)
+cargo nextest run
 ```

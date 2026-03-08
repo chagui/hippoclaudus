@@ -1,17 +1,16 @@
+use rusqlite::Connection;
 use tempfile::TempDir;
 
 use claude_pulse::config::Config;
 use claude_pulse::state::SyncState;
 
 // ---------------------------------------------------------------------------
-// SyncState — using SyncState::open_at(tempfile) instead of production DB
+// SyncState — inject an in-memory connection to avoid disk I/O and WAL threads
 // ---------------------------------------------------------------------------
 
-fn temp_state() -> (SyncState, TempDir) {
-    let dir = TempDir::new().unwrap();
-    let db_path = dir.path().join("test-state.db");
-    let state = SyncState::open_at(&db_path).expect("should open temp DB");
-    (state, dir)
+fn temp_state() -> SyncState {
+    let conn = Connection::open_in_memory().expect("should open in-memory connection");
+    SyncState::from_connection(conn).expect("should initialize schema")
 }
 
 #[test]
@@ -25,7 +24,7 @@ fn state_open_creates_db() {
 
 #[test]
 fn state_mark_and_is_processed_roundtrip() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     assert!(!state.is_processed("session-1", 1234.567));
 
@@ -38,7 +37,7 @@ fn state_mark_and_is_processed_roundtrip() {
 
 #[test]
 fn state_is_processed_false_for_different_mtime() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .mark_processed("session-1", 1234.567, "test:mtime", 5000)
@@ -49,7 +48,7 @@ fn state_is_processed_false_for_different_mtime() {
 
 #[test]
 fn state_processed_sessions_returns_marked() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .mark_processed("id1", 100.0, "created:a.md", 1000)
@@ -72,7 +71,7 @@ fn state_processed_sessions_returns_marked() {
 
 #[test]
 fn state_last_run_after_mark() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .mark_processed("session-1", 100.0, "test:lastrun", 1000)
@@ -88,7 +87,7 @@ fn state_last_run_after_mark() {
 
 #[test]
 fn session_stats_upsert_and_get() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .upsert_session_stats(
@@ -124,7 +123,7 @@ fn session_stats_upsert_and_get() {
 
 #[test]
 fn session_stats_get_all() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .upsert_session_stats("s1", 1000, 800, 200, 2, 1, 1, 2, 3, 4, None)
@@ -139,13 +138,13 @@ fn session_stats_get_all() {
 
 #[test]
 fn session_stats_not_found() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
     assert!(state.get_session_stats("nonexistent").is_none());
 }
 
 #[test]
 fn prompt_files_upsert_and_get() {
-    let (state, _dir) = temp_state();
+    let state = temp_state();
 
     state
         .upsert_prompt_file(

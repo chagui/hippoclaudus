@@ -1,0 +1,17 @@
+[profile.default]
+# Warn after 60s, hard-kill after 3 minutes (terminate-after × period).
+slow-timeout = { period = "60s", terminate-after = 3 }
+# Retry flaky tests before failing.
+retries = 2
+
+[profile.ci]
+# Run all tests even if some fail — surface everything in one pass.
+fail-fast = false
+# Show failures inline and repeated in the final summary.
+failure-output = "immediate-final"
+# Surface flaky tests (pass-on-retry) in the summary instead of hiding them.
+final-status-level = "flaky"
+retries = 2
+slow-timeout = { period = "60s", terminate-after = 3 }
+# JUnit XML for CI integration (e.g., GitHub Actions test summary).
+junit = { path = "target/nextest/ci/junit.xml" }
