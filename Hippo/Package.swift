@@ -13,7 +13,15 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Hippo",
-            path: "Sources/Hippo"
+            path: "Sources/Hippo",
+            linkerSettings: [
+                .unsafeFlags([
+                    "-Xlinker", "-sectcreate",
+                    "-Xlinker", "__TEXT",
+                    "-Xlinker", "__info_plist",
+                    "-Xlinker", "Info.plist",
+                ]),
+            ]
         ),
         .testTarget(
             name: "HippoTests",

@@ -428,6 +428,10 @@ struct ToolsSection: View {
                 }
             }
 
+            ToolMenuItem(icon: "info.circle", label: "About Hippoclaudus") {
+                AboutWindowController.show()
+            }
+
             ToolMenuItem(icon: "power", label: "Quit Hippoclaudus") {
                 NSApplication.shared.terminate(nil)
             }
