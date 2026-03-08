@@ -184,6 +184,113 @@ import Testing
         #expect(result == "1h 5m")
     }
 
+    // MARK: - timeSplit tests
+
+    @Test func timeSplitWithValues() throws {
+        let json: [String: Any] = [
+            "session_id": "ts-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "sonnet", "total_input_tokens": 0,
+            "total_output_tokens": 0, "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0, "avg_turn_duration_ms": 0,
+            "turn_count": 0, "state": "active",
+            "agent_time_pct": 72.5, "user_time_pct": 27.5,
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+        #expect(s.timeSplit == "Agent 72% / User 28%")
+    }
+
+    @Test func timeSplitNilWhenMissing() {
+        let s = makeSession()
+        #expect(s.timeSplit == nil)
+    }
+
+    // MARK: - toolSummary tests
+
+    @Test func toolSummaryWithValues() throws {
+        let json: [String: Any] = [
+            "session_id": "tool-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "sonnet", "total_input_tokens": 0,
+            "total_output_tokens": 0, "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0, "avg_turn_duration_ms": 0,
+            "turn_count": 0, "state": "active",
+            "write_count": 3, "edit_count": 12, "bash_count": 7,
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+        #expect(s.toolSummary == "3W 12E 7B")
+    }
+
+    @Test func toolSummaryNilWhenMissing() {
+        let s = makeSession()
+        #expect(s.toolSummary == nil)
+    }
+
+    // MARK: - worktreeRoot decoding
+
+    @Test func worktreeRootDecoded() throws {
+        let json: [String: Any] = [
+            "session_id": "wt-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "sonnet", "total_input_tokens": 0,
+            "total_output_tokens": 0, "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0, "avg_turn_duration_ms": 0,
+            "turn_count": 0, "state": "active",
+            "worktree_root": "/Users/dev/my-project",
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+        #expect(s.worktreeRoot == "/Users/dev/my-project")
+    }
+
+    @Test func worktreeRootNilWhenMissing() {
+        let s = makeSession()
+        #expect(s.worktreeRoot == nil)
+    }
+
+    // MARK: - filesTouchedCount decoding
+
+    @Test func filesTouchedCountDecoded() throws {
+        let json: [String: Any] = [
+            "session_id": "ft-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "sonnet", "total_input_tokens": 0,
+            "total_output_tokens": 0, "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0, "avg_turn_duration_ms": 0,
+            "turn_count": 0, "state": "active",
+            "files_touched_count": 42,
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+        #expect(s.filesTouchedCount == 42)
+    }
+
+    // MARK: - estimatedCost with cache tokens
+
+    @Test func estimatedCostReducedByCacheRead() {
+        let noCacheSonnet = makeSession(
+            model: "claude-sonnet-4-6",
+            totalInputTokens: 100_000,
+            totalOutputTokens: 10_000
+        )
+        let json: [String: Any] = [
+            "session_id": "cache-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "claude-sonnet-4-6",
+            "total_input_tokens": 100_000, "total_output_tokens": 10_000,
+            "total_cache_read_tokens": 80_000, "total_cache_creation_tokens": 0,
+            "avg_turn_duration_ms": 0, "turn_count": 0, "state": "active",
+        ]
+        let data = try! JSONSerialization.data(withJSONObject: json)
+        let cachedSonnet = try! JSONDecoder().decode(ActiveSessionResponse.self, from: data)
+
+        let noCacheCost = parseCost(noCacheSonnet.estimatedCost)
+        let cachedCost = parseCost(cachedSonnet.estimatedCost)
+        #expect(cachedCost < noCacheCost, "Cache reads should reduce cost")
+    }
+
     // MARK: - Helpers
 
     private func parseCost(_ cost: String) -> Double {
