@@ -87,7 +87,7 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Rust coverage (fail under 80%)
-        run: cargo llvm-cov nextest --fail-under-lines 80
+        run: ./scripts/coverage.sh rust
 
       - name: Swift coverage
         working-directory: Hippo

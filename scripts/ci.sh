@@ -7,7 +7,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 pass() { printf '\033[32m✓ %s\033[0m\n' "$1"; }
-fail() { printf '\033[31m✗ %s\033[0m\n' "$1"; exit 1; }
+fail() {
+    printf '\033[31m✗ %s\033[0m\n' "$1"
+    exit 1
+}
 step() { printf '\n\033[1m=== %s ===\033[0m\n' "$1"; }
 
 # --- Rust ---
@@ -26,6 +29,14 @@ pass "cargo clippy"
 step "cargo nextest run"
 cargo nextest run || fail "cargo nextest run"
 pass "cargo nextest run"
+
+step "Rust coverage (fail under 80%)"
+if command -v cargo-llvm-cov &>/dev/null; then
+    "$ROOT/scripts/coverage.sh" rust || fail "Rust coverage"
+    pass "Rust coverage"
+else
+    printf '  \033[33m⚠ cargo-llvm-cov not found, skipping (install with: cargo install cargo-llvm-cov)\033[0m\n'
+fi
 
 # --- Swift ---
 step "swift build"
