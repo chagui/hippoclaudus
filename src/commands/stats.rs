@@ -253,6 +253,7 @@ fn print_session_stats(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn print_aggregate_text(
     days: u32,
     sessions: usize,
@@ -323,6 +324,7 @@ fn print_aggregate_text(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn print_aggregate_json(
     days: u32,
     sessions: usize,

@@ -180,6 +180,7 @@ impl SyncState {
     }
 
     /// Upsert session stats for a given session.
+    #[allow(clippy::too_many_arguments)]
     pub fn upsert_session_stats(
         &self,
         session_id: &str,
@@ -230,7 +231,7 @@ impl SyncState {
                         bash_count, files_touched_count, commit_ratio_pct, computed_at
                  FROM session_stats WHERE session_id = ?",
                 params![session_id],
-                |row| SessionStatsRow::from_row(row),
+                SessionStatsRow::from_row,
             )
             .ok()
     }
@@ -249,7 +250,7 @@ impl SyncState {
             .context("Failed to prepare session_stats query")?;
 
         let rows = stmt
-            .query_map(params![cutoff], |row| SessionStatsRow::from_row(row))
+            .query_map(params![cutoff], SessionStatsRow::from_row)
             .context("Failed to query session stats")?;
 
         Ok(rows.flatten().collect())
@@ -301,7 +302,7 @@ impl SyncState {
                     )
                     .context("Failed to prepare prompt_files query")?;
                 let rows = stmt
-                    .query_map(params![cutoff], |row| PromptFileRow::from_row(row))
+                    .query_map(params![cutoff], PromptFileRow::from_row)
                     .context("Failed to query prompt files")?;
                 return Ok(rows.flatten().collect());
             }
@@ -317,7 +318,7 @@ impl SyncState {
             .prepare(query)
             .context("Failed to prepare prompt_files query")?;
         let rows = stmt
-            .query_map([], |row| PromptFileRow::from_row(row))
+            .query_map([], PromptFileRow::from_row)
             .context("Failed to query prompt files")?;
         Ok(rows.flatten().collect())
     }

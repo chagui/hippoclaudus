@@ -5,7 +5,10 @@ let package = Package(
     name: "ClaudePulse",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-testing.git", branch: "main"),
+        .package(
+            url: "https://github.com/swiftlang/swift-testing.git",
+            branch: "release/6.0"
+        ),
     ],
     targets: [
         .executableTarget(
@@ -19,6 +22,6 @@ let package = Package(
                 .product(name: "Testing", package: "swift-testing"),
             ],
             path: "Tests/ClaudePulseTests"
-        )
+        ),
     ]
 )

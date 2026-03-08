@@ -7,6 +7,7 @@ pub struct SyncResult {
     pub created_files: Vec<String>,
     pub updated_files: Vec<String>,
     pub no_new_knowledge: bool,
+    #[allow(dead_code)]
     pub claude_output: String,
 }
 

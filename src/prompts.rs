@@ -57,9 +57,7 @@ pub fn prompt_confidence(tool_call: &ToolCall, project_cwd: &str) -> f64 {
     let mut score: f64 = 0.0;
 
     // Extension signals
-    if path_lower.ends_with(".md") {
-        score += 0.15;
-    } else if path_lower.ends_with(".txt") {
+    if path_lower.ends_with(".md") || path_lower.ends_with(".txt") {
         score += 0.15;
     } else if path_lower.ends_with(".prompt") || path_lower.ends_with(".template") {
         score += 0.25;

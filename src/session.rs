@@ -524,11 +524,7 @@ fn compute_timing_stats(
         0
     };
 
-    let user_interactions = if real_user_message_count > 1 {
-        real_user_message_count - 1
-    } else {
-        0
-    };
+    let user_interactions = real_user_message_count.saturating_sub(1);
     let avg_user_interaction_ms = if user_interactions > 0 {
         user_time_ms / user_interactions as u64
     } else {

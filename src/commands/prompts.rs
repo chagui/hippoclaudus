@@ -81,8 +81,8 @@ pub fn cmd_prompts(config: &Config, days: u32, threshold: f64, json: bool) -> Re
         }
 
         println!(
-            "{:<60} {:<12} {:<10} {:<6} {}",
-            "PATH", "SESSION", "DATE", "CONF", "EXISTS"
+            "{:<60} {:<12} {:<10} {:<6} EXISTS",
+            "PATH", "SESSION", "DATE", "CONF",
         );
         println!("{}", "-".repeat(100));
 
