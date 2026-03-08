@@ -71,6 +71,11 @@ cd Hippo && swift test  # uses swift-testing framework
 
 Rust tests use `proptest` for property-based testing and `tempfile` for isolated state DB tests. Integration tests live in `tests/`. Swift tests use Apple's `swift-testing` framework. Fuzzing targets are in `fuzz/`.
 
+<!-- TODO: Swift Testing is getting improved console output (tree-style, per-test timing)
+     via a GSoC 2025 project: https://www.swift.org/blog/gsoc-2025-showcase-swift-testing-output/
+     Expected in Swift 6.2+. Switch to it when available — it's the closest thing to cargo-nextest
+     for Swift. -->
+
 ## Code Coverage
 
 ```bash
