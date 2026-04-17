@@ -80,7 +80,7 @@ pub fn discover_sessions(config: &Config, days: Option<u32>) -> Vec<PathBuf> {
     }
 
     // Sort by mtime, newest first
-    sessions.sort_by(|a, b| b.1.cmp(&a.1));
+    sessions.sort_by_key(|s| std::cmp::Reverse(s.1));
 
     sessions.into_iter().map(|(path, _)| path).collect()
 }
@@ -144,7 +144,7 @@ pub fn discover_active_sessions(config: &Config) -> Vec<PathBuf> {
     }
 
     // Sort by mtime, newest first
-    sessions.sort_by(|a, b| b.1.cmp(&a.1));
+    sessions.sort_by_key(|s| std::cmp::Reverse(s.1));
 
     sessions.into_iter().map(|(path, _)| path).collect()
 }
