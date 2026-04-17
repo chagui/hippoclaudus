@@ -423,7 +423,8 @@ struct ToolsSection: View {
             .disabled(statusProvider.isSyncing)
 
             ToolMenuItem(icon: "folder.badge.gearshape", label: "Open Vault") {
-                if let url = URL(string: "obsidian://open?vault=Claude") {
+                let vault = AppConfig.vaultName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? AppConfig.vaultName
+                if let url = URL(string: "obsidian://open?vault=\(vault)") {
                     NSWorkspace.shared.open(url)
                 }
             }
@@ -528,7 +529,8 @@ struct BottomBar: View {
                 }
 
                 Button(action: {
-                    if let url = URL(string: "obsidian://open?vault=Claude") {
+                    let vault = AppConfig.vaultName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? AppConfig.vaultName
+                    if let url = URL(string: "obsidian://open?vault=\(vault)") {
                         NSWorkspace.shared.open(url)
                     }
                 }) {

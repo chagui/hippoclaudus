@@ -10,4 +10,9 @@ struct AppConfigTests {
         #expect(vault.contains("Obsidian"))
         #expect(projects.contains(".claude/projects"))
     }
+
+    @Test func vaultNameIsNonEmpty() {
+        // Either a configured value or the fallback (lastPathComponent of vault_path) yields non-empty.
+        #expect(!AppConfig.vaultName.isEmpty)
+    }
 }

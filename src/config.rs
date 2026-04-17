@@ -6,6 +6,8 @@ use std::path::PathBuf;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub vault_path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vault_name: Option<String>,
     pub claude_projects_path: String,
 }
 
@@ -56,6 +58,19 @@ impl Config {
         expand_tilde(&self.vault_path)
     }
 
+    /// Obsidian vault name used in `obsidian://open?vault=...` URLs.
+    /// Falls back to the last path component of `vault_path` when unset.
+    pub fn vault_name(&self) -> String {
+        if let Some(name) = self.vault_name.as_ref().filter(|n| !n.is_empty()) {
+            return name.clone();
+        }
+        self.vault_path()
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string()
+    }
+
     /// Resolved claude projects path (tilde-expanded).
     pub fn projects_path(&self) -> PathBuf {
         expand_tilde(&self.claude_projects_path)
@@ -74,6 +89,7 @@ impl Config {
     fn defaults() -> Self {
         Self {
             vault_path: "~/Documents/Obsidian/Vaults/Claude".to_string(),
+            vault_name: None,
             claude_projects_path: "~/.claude/projects".to_string(),
         }
     }
@@ -148,5 +164,43 @@ mod tests {
             let result = expand_tilde(&path);
             prop_assert_eq!(result.to_str().unwrap(), &path);
         }
+    }
+
+    #[test]
+    fn vault_name_uses_configured_value() {
+        let config = Config {
+            vault_path: "/tmp/some/dir".to_string(),
+            vault_name: Some("MyKnowledge".to_string()),
+            claude_projects_path: "/tmp/projects".to_string(),
+        };
+        assert_eq!(config.vault_name(), "MyKnowledge");
+    }
+
+    #[test]
+    fn vault_name_falls_back_to_path_component() {
+        let config = Config {
+            vault_path: "/tmp/some/dir/Claude".to_string(),
+            vault_name: None,
+            claude_projects_path: "/tmp/projects".to_string(),
+        };
+        assert_eq!(config.vault_name(), "Claude");
+    }
+
+    #[test]
+    fn vault_name_empty_configured_falls_back() {
+        let config = Config {
+            vault_path: "/tmp/vaults/Work".to_string(),
+            vault_name: Some(String::new()),
+            claude_projects_path: "/tmp/projects".to_string(),
+        };
+        assert_eq!(config.vault_name(), "Work");
+    }
+
+    #[test]
+    fn vault_name_missing_field_deserializes() {
+        let json = r#"{"vault_path":"/tmp/v/Claude","claude_projects_path":"/tmp/p"}"#;
+        let config: Config = serde_json::from_str(json).unwrap();
+        assert!(config.vault_name.is_none());
+        assert_eq!(config.vault_name(), "Claude");
     }
 }

@@ -177,6 +177,7 @@ fn discover_sessions_empty_dir() {
     let dir = TempDir::new().unwrap();
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
     let sessions = hippoclaudus::discover_sessions(&config, Some(7));
@@ -198,6 +199,7 @@ fn discover_active_sessions_finds_recent_jsonl() {
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
 
@@ -220,6 +222,7 @@ fn discover_sessions_skips_non_jsonl() {
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
     let sessions = hippoclaudus::discover_sessions(&config, Some(7));
@@ -230,6 +233,7 @@ fn discover_sessions_skips_non_jsonl() {
 fn discover_active_sessions_nonexistent_dir() {
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: "/nonexistent/path".to_string(),
     };
     let sessions = hippoclaudus::discover_active_sessions(&config);
@@ -259,6 +263,7 @@ fn discover_sessions_finds_old_jsonl() {
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
 
@@ -290,6 +295,7 @@ fn discover_sessions_filters_by_max_age() {
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
 
@@ -330,6 +336,7 @@ fn discover_sessions_sorted_newest_first() {
 
     let config = Config {
         vault_path: "/tmp/vault".to_string(),
+        vault_name: None,
         claude_projects_path: dir.path().to_str().unwrap().to_string(),
     };
 
@@ -357,6 +364,7 @@ fn vault_note_count_counts_md_files() {
 
     let config = Config {
         vault_path: dir.path().to_str().unwrap().to_string(),
+        vault_name: None,
         claude_projects_path: "/tmp/projects".to_string(),
     };
 
@@ -378,6 +386,7 @@ fn vault_note_count_skips_dotfiles_and_templates() {
 
     let config = Config {
         vault_path: dir.path().to_str().unwrap().to_string(),
+        vault_name: None,
         claude_projects_path: "/tmp/projects".to_string(),
     };
 
@@ -388,6 +397,7 @@ fn vault_note_count_skips_dotfiles_and_templates() {
 fn vault_note_count_nonexistent_vault() {
     let config = Config {
         vault_path: "/nonexistent/vault".to_string(),
+        vault_name: None,
         claude_projects_path: "/tmp/projects".to_string(),
     };
     assert_eq!(hippoclaudus::vault_note_count(&config), 0);
@@ -417,6 +427,7 @@ fn file_mtime_secs_returns_zero_for_missing_file() {
 fn config_vault_path_expands_tilde() {
     let config = Config {
         vault_path: "~/Documents/Vault".to_string(),
+        vault_name: None,
         claude_projects_path: "~/.claude/projects".to_string(),
     };
     let vault = config.vault_path();
@@ -432,6 +443,7 @@ fn config_vault_path_expands_tilde() {
 fn config_vault_path_absolute_passthrough() {
     let config = Config {
         vault_path: "/absolute/path/vault".to_string(),
+        vault_name: None,
         claude_projects_path: "/absolute/projects".to_string(),
     };
     assert_eq!(

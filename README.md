@@ -34,9 +34,12 @@ Config is stored at `~/Library/Application Support/com.chagui.hippoclaudus/confi
 ```json
 {
   "vault_path": "~/Documents/Obsidian/Vaults/Claude",
+  "vault_name": "Claude",
   "claude_projects_path": "~/.claude/projects"
 }
 ```
+
+`vault_name` is optional — it's the Obsidian vault name used in `obsidian://open?vault=...` URLs. If omitted, the last path component of `vault_path` is used (e.g. `Claude` above). Set it explicitly when your Obsidian-registered vault name differs from the folder name.
 
 ## CLI Usage
 

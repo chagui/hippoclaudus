@@ -118,6 +118,7 @@ mod tests {
     fn make_config() -> Config {
         Config {
             vault_path: "/tmp/test-vault".to_string(),
+            vault_name: None,
             claude_projects_path: "/tmp/test-projects".to_string(),
         }
     }

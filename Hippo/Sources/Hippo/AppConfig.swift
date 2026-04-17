@@ -5,6 +5,7 @@
 enum AppConfig {
     private struct ConfigFile: Decodable {
         let vault_path: String?
+        let vault_name: String?
         let claude_projects_path: String?
     }
 
@@ -36,5 +37,14 @@ enum AppConfig {
             return NSString(string: path).expandingTildeInPath
         }
         return defaultProjectsPath
+    }
+
+    /// Obsidian vault name used in `obsidian://open?vault=...` URLs.
+    /// Falls back to the last path component of `vaultPath` when unset.
+    static var vaultName: String {
+        if let name = cached?.vault_name, !name.isEmpty {
+            return name
+        }
+        return (vaultPath as NSString).lastPathComponent
     }
 }

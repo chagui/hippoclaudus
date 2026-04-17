@@ -170,6 +170,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let config = Config {
             vault_path: dir.path().to_str().unwrap().to_string(),
+            vault_name: None,
             claude_projects_path: "/tmp/unused".to_string(),
         };
         assert_eq!(vault_size_kb(&config), 0);
@@ -183,6 +184,7 @@ mod tests {
 
         let config = Config {
             vault_path: dir.path().to_str().unwrap().to_string(),
+            vault_name: None,
             claude_projects_path: "/tmp/unused".to_string(),
         };
         assert_eq!(vault_size_kb(&config), 2);
@@ -192,6 +194,7 @@ mod tests {
     fn vault_size_kb_nonexistent_dir() {
         let config = Config {
             vault_path: "/nonexistent/vault/path".to_string(),
+            vault_name: None,
             claude_projects_path: "/tmp/unused".to_string(),
         };
         assert_eq!(vault_size_kb(&config), 0);

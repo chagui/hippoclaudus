@@ -68,7 +68,8 @@ final class SearchProvider: ObservableObject {
 
     func openInObsidian(result: SearchResult) {
         let encoded = result.fileNameWithoutExtension.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? result.fileNameWithoutExtension
-        let urlString = "obsidian://open?vault=Claude&file=\(encoded)"
+        let vault = AppConfig.vaultName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? AppConfig.vaultName
+        let urlString = "obsidian://open?vault=\(vault)&file=\(encoded)"
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
