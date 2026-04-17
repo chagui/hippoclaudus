@@ -68,6 +68,21 @@ swift build -c release
 .build/release/Hippo
 ```
 
+## Claude Code Skills
+
+The `.claude/skills/` directory ships two slash commands for use inside a Claude Code session:
+
+- `/save-note <title>` — Save a focused note about the current topic to your Obsidian vault.
+- `/save-knowledge [topic]` — Extract all distinct topics from the session and organize them into vault files.
+
+Both require an `OBSIDIAN_VAULT` environment variable pointing at the absolute path of your vault:
+
+```bash
+export OBSIDIAN_VAULT=~/Documents/Obsidian/Vaults/Claude
+```
+
+The skills are complementary to automated sync: use them for ad-hoc saves mid-session, and let the LaunchAgent handle the daily batch pass.
+
 ## Uninstallation
 
 ```bash
