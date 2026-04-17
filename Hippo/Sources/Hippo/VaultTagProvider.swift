@@ -57,7 +57,10 @@ final class VaultTagProvider: ObservableObject {
     private nonisolated static func scanTags() -> [VaultTag] {
         let fm = FileManager.default
 
-        guard let enumerator = fm.enumerator(atPath: vaultPath) else { return [] }
+        guard let enumerator = fm.enumerator(atPath: vaultPath) else {
+            NSLog("VaultTagProvider: vault path not enumerable: %@", vaultPath)
+            return []
+        }
 
         var tagToDocuments: [String: [TagDocument]] = [:]
 

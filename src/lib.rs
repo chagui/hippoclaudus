@@ -152,6 +152,10 @@ pub fn discover_active_sessions(config: &Config) -> Vec<PathBuf> {
 /// Count markdown files in the vault (excluding dotfiles and Templates/).
 pub fn vault_note_count(config: &Config) -> usize {
     let vault_dir = config.vault_path();
+    if !vault_dir.exists() {
+        log::warn!("vault_path does not exist: {}", vault_dir.display());
+        return 0;
+    }
     count_md_files(&vault_dir)
 }
 
