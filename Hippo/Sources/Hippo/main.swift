@@ -5,10 +5,9 @@ import AppKit
 let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
-// During development, keep .regular so the app shows in the Dock.
-// Uncomment for release to hide the Dock icon.
-// DispatchQueue.main.async {
-//     NSApp.setActivationPolicy(.accessory)
-// }
+// Switch to .accessory to hide the Dock icon (menu bar only).
+DispatchQueue.main.async {
+    NSApp.setActivationPolicy(.accessory)
+}
 
 HippoApp.main()
