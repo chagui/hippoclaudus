@@ -35,11 +35,14 @@ Config is stored at `~/Library/Application Support/com.chagui.hippoclaudus/confi
 {
   "vault_path": "~/Documents/Obsidian/Vaults/Claude",
   "vault_name": "Claude",
-  "claude_projects_path": "~/.claude/projects"
+  "claude_projects_path": "~/.claude/projects",
+  "active_window_minutes": 5
 }
 ```
 
 `vault_name` is optional — it's the Obsidian vault name used in `obsidian://open?vault=...` URLs. If omitted, the last path component of `vault_path` is used (e.g. `Claude` above). Set it explicitly when your Obsidian-registered vault name differs from the folder name.
+
+`active_window_minutes` controls how long a session is considered "active" after its last modification. Defaults to 5 minutes when omitted. Widen it (e.g. to 30) if you often have multiple Claude Code windows open and want them all to appear in the menu bar at once.
 
 ## CLI Usage
 

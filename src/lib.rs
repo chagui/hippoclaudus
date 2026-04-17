@@ -19,7 +19,7 @@ pub fn discover_sessions(config: &Config, days: Option<u32>) -> Vec<PathBuf> {
     let projects_dir = config.projects_path();
 
     let now = SystemTime::now();
-    let five_minutes = Duration::from_secs(5 * 60);
+    let active_window = config.active_window();
     let max_age = days.map(|d| Duration::from_secs(d as u64 * 24 * 3600));
 
     let mut sessions: Vec<(PathBuf, SystemTime)> = Vec::new();
@@ -59,9 +59,9 @@ pub fn discover_sessions(config: &Config, days: Option<u32>) -> Vec<PathBuf> {
                 Err(_) => continue,
             };
 
-            // Skip files modified < 5 min ago (still active)
+            // Skip files modified within the active window (still active)
             if let Ok(age) = now.duration_since(mtime) {
-                if age < five_minutes {
+                if age < active_window {
                     continue;
                 }
             }
@@ -85,15 +85,16 @@ pub fn discover_sessions(config: &Config, days: Option<u32>) -> Vec<PathBuf> {
     sessions.into_iter().map(|(path, _)| path).collect()
 }
 
-/// Discover active JSONL session files (modified < 5 min ago).
+/// Discover active JSONL session files (modified within the configured active window).
 ///
 /// This is the inverse of `discover_sessions()` — it returns files that are
-/// likely still being written to by an active Claude Code session.
+/// likely still being written to by an active Claude Code session. The active
+/// window defaults to 5 minutes and is configurable via `active_window_minutes`.
 pub fn discover_active_sessions(config: &Config) -> Vec<PathBuf> {
     let projects_dir = config.projects_path();
 
     let now = SystemTime::now();
-    let five_minutes = Duration::from_secs(5 * 60);
+    let active_window = config.active_window();
 
     let mut sessions: Vec<(PathBuf, SystemTime)> = Vec::new();
 
@@ -130,9 +131,9 @@ pub fn discover_active_sessions(config: &Config) -> Vec<PathBuf> {
                 Err(_) => continue,
             };
 
-            // Only files modified < 5 min ago (active)
+            // Only files modified within the active window
             if let Ok(age) = now.duration_since(mtime) {
-                if age >= five_minutes {
+                if age >= active_window {
                     continue;
                 }
             } else {
