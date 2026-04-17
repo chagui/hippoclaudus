@@ -1,6 +1,11 @@
 import SwiftUI
 
 struct AboutView: View {
+    private var appVersion: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        return "v\(v)"
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "brain.head.profile")
@@ -10,7 +15,7 @@ struct AboutView: View {
             Text("Hippoclaudus")
                 .font(.system(size: 18, weight: .bold))
 
-            Text("v0.1.0")
+            Text(appVersion)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
 
