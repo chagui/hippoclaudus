@@ -1,5 +1,7 @@
+pub mod analytics;
 pub mod config;
 pub mod git_stats;
+pub mod pricing;
 pub mod prompts;
 pub mod session;
 pub mod state;
