@@ -1,11 +1,57 @@
+use std::path::Path;
+
 use anyhow::Result;
 
 use hippoclaudus::config::Config;
-use hippoclaudus::session::extract_session_metadata;
+use hippoclaudus::session::{extract_session_metadata, ActiveSessionInfo};
 use hippoclaudus::state::SyncState;
 use hippoclaudus::{discover_active_sessions, discover_sessions, vault_note_count};
 
 use crate::helpers::{file_mtime, session_id_from_path, vault_size_kb};
+
+/// Days of history to surface in `inactive_sessions` (non-active sessions still worth showing in the menu bar).
+const INACTIVE_WINDOW_DAYS: u32 = 1;
+
+fn session_info_to_json(info: &ActiveSessionInfo) -> serde_json::Value {
+    let mut obj = serde_json::json!({
+        "session_id": info.session_id,
+        "project_name": info.project_name,
+        "project_cwd": info.project_cwd,
+        "git_branch": info.git_branch,
+        "started_at": info.started_at,
+        "exchange_count": info.exchange_count,
+        "model": info.model,
+        "total_input_tokens": info.total_input_tokens,
+        "total_output_tokens": info.total_output_tokens,
+        "total_cache_read_tokens": info.total_cache_read_tokens,
+        "total_cache_creation_tokens": info.total_cache_creation_tokens,
+        "avg_turn_duration_ms": info.avg_turn_duration_ms,
+        "turn_count": info.turn_count,
+        "state": info.state,
+        "write_count": info.write_count,
+        "edit_count": info.edit_count,
+        "bash_count": info.bash_count,
+        "files_touched_count": info.files_touched_count,
+    });
+    if let Some(ref timing) = info.timing {
+        obj["agent_time_ms"] = serde_json::json!(timing.agent_time_ms);
+        obj["user_time_ms"] = serde_json::json!(timing.user_time_ms);
+        obj["agent_time_pct"] = serde_json::json!(timing.agent_time_pct);
+        obj["user_time_pct"] = serde_json::json!(timing.user_time_pct);
+    }
+    if let Some(ref wt_root) = info.worktree_root {
+        obj["worktree_root"] = serde_json::json!(wt_root);
+    }
+    obj
+}
+
+fn paths_to_session_json(paths: &[impl AsRef<Path>]) -> Vec<serde_json::Value> {
+    paths
+        .iter()
+        .filter_map(|path| extract_session_metadata(path.as_ref()).ok())
+        .map(|info| session_info_to_json(&info))
+        .collect()
+}
 
 pub fn cmd_status(config: &Config) -> Result<()> {
     let state = SyncState::open(config)?;
@@ -63,44 +109,13 @@ pub fn cmd_status(config: &Config) -> Result<()> {
     let vault_size_kb = vault_size_kb(config);
 
     let active_paths = discover_active_sessions(config);
-    let active_sessions: Vec<serde_json::Value> = active_paths
-        .iter()
-        .filter_map(|path| {
-            extract_session_metadata(path).ok().map(|info| {
-                let mut obj = serde_json::json!({
-                    "session_id": info.session_id,
-                    "project_name": info.project_name,
-                    "project_cwd": info.project_cwd,
-                    "git_branch": info.git_branch,
-                    "started_at": info.started_at,
-                    "exchange_count": info.exchange_count,
-                    "model": info.model,
-                    "total_input_tokens": info.total_input_tokens,
-                    "total_output_tokens": info.total_output_tokens,
-                    "total_cache_read_tokens": info.total_cache_read_tokens,
-                    "total_cache_creation_tokens": info.total_cache_creation_tokens,
-                    "avg_turn_duration_ms": info.avg_turn_duration_ms,
-                    "turn_count": info.turn_count,
-                    "state": info.state,
-                    "write_count": info.write_count,
-                    "edit_count": info.edit_count,
-                    "bash_count": info.bash_count,
-                    "files_touched_count": info.files_touched_count,
-                });
-                if let Some(ref timing) = info.timing {
-                    obj["agent_time_ms"] = serde_json::json!(timing.agent_time_ms);
-                    obj["user_time_ms"] = serde_json::json!(timing.user_time_ms);
-                    obj["agent_time_pct"] = serde_json::json!(timing.agent_time_pct);
-                    obj["user_time_pct"] = serde_json::json!(timing.user_time_pct);
-                }
-                if let Some(ref wt_root) = info.worktree_root {
-                    obj["worktree_root"] = serde_json::json!(wt_root);
-                }
-                obj
-            })
-        })
-        .collect();
+    let active_sessions = paths_to_session_json(&active_paths);
     let active_session_count = active_sessions.len();
+
+    // Inactive sessions: modified outside the active window but within INACTIVE_WINDOW_DAYS.
+    let inactive_paths = discover_sessions(config, Some(INACTIVE_WINDOW_DAYS));
+    let inactive_sessions = paths_to_session_json(&inactive_paths);
+    let inactive_session_count = inactive_sessions.len();
 
     // Aggregate stats from DB (last 7 days)
     let aggregate_stats = state.get_all_session_stats(7).ok().map(|stats| {
@@ -148,6 +163,8 @@ pub fn cmd_status(config: &Config) -> Result<()> {
         "state_file": db_path,
         "active_session_count": active_session_count,
         "active_sessions": active_sessions,
+        "inactive_session_count": inactive_session_count,
+        "inactive_sessions": inactive_sessions,
     });
     if let Some(agg) = aggregate_stats {
         status["aggregate_stats"] = agg;

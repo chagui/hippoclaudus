@@ -11,6 +11,7 @@ final class StatusProvider: ObservableObject {
     @Published var errorMessage: String?
     @Published var activeSessionCount: Int = 0
     @Published var activeSessions: [ActiveSessionResponse] = []
+    @Published var inactiveSessions: [ActiveSessionResponse] = []
 
     /// True if any active session is waiting for user input.
     var anySessionWaiting: Bool {
@@ -60,6 +61,7 @@ final class StatusProvider: ObservableObject {
             vaultNotes = parsed.vaultNotes ?? 0
             activeSessionCount = parsed.activeSessionCount ?? 0
             activeSessions = parsed.activeSessions ?? []
+            inactiveSessions = parsed.inactiveSessions ?? []
             errorMessage = nil
 
             let sessions = activeSessions
@@ -107,6 +109,7 @@ struct StatusResponse: Decodable {
     let vaultNotes: Int?
     let activeSessionCount: Int?
     let activeSessions: [ActiveSessionResponse]?
+    let inactiveSessions: [ActiveSessionResponse]?
     let aggregateStats: AggregateStatsResponse?
 
     enum CodingKeys: String, CodingKey {
@@ -116,6 +119,7 @@ struct StatusResponse: Decodable {
         case vaultNotes = "vault_notes"
         case activeSessionCount = "active_session_count"
         case activeSessions = "active_sessions"
+        case inactiveSessions = "inactive_sessions"
         case aggregateStats = "aggregate_stats"
     }
 }

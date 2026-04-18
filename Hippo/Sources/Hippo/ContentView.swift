@@ -43,6 +43,15 @@ struct ContentView: View {
                         }
                     }
 
+                    if !statusProvider.inactiveSessions.isEmpty {
+                        InactiveSessionsSection(
+                            sessions: statusProvider.inactiveSessions,
+                            enrichmentProvider: enrichmentProvider,
+                            expandedSessions: $expandedSessions,
+                            onToggleSession: toggleSession,
+                        )
+                    }
+
                     ToolsSection(
                         statusProvider: statusProvider,
                         repoProvider: repoProvider,
@@ -365,6 +374,43 @@ struct EmptyStateView: View {
         }
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Inactive Sessions Section
+
+struct InactiveSessionsSection: View {
+    let sessions: [ActiveSessionResponse]
+    @ObservedObject var enrichmentProvider: GitEnrichmentProvider
+    @Binding var expandedSessions: Set<String>
+    let onToggleSession: (String) -> Void
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ToolMenuItem(
+                icon: "clock",
+                label: "Inactive Sessions",
+                count: sessions.count,
+                isExpanded: isExpanded,
+            ) {
+                withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+            }
+
+            if isExpanded {
+                ForEach(sessions, id: \.id) { session in
+                    SessionCard(
+                        session: session,
+                        enrichment: enrichmentProvider.enrichments[session.id],
+                        isExpanded: expandedSessions.contains(session.id),
+                        onToggle: { onToggleSession(session.id) },
+                    )
+                    if session.id != sessions.last?.id {
+                        Divider().padding(.horizontal, 12)
+                    }
+                }
+            }
+        }
     }
 }
 
