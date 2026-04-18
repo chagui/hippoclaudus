@@ -392,17 +392,20 @@ struct InactiveSessionsSection: View {
             }
 
             if isExpanded {
-                ForEach(sessions, id: \.id) { session in
-                    SessionCard(
-                        session: session,
-                        enrichment: enrichmentProvider.enrichments[session.id],
-                        isExpanded: expandedSessions.contains(session.id),
-                        onToggle: { onToggleSession(session.id) },
-                    )
-                    if session.id != sessions.last?.id {
-                        Divider().padding(.horizontal, 12)
+                VStack(spacing: 0) {
+                    ForEach(sessions, id: \.id) { session in
+                        SessionCard(
+                            session: session,
+                            enrichment: enrichmentProvider.enrichments[session.id],
+                            isExpanded: expandedSessions.contains(session.id),
+                            onToggle: { onToggleSession(session.id) },
+                        )
+                        if session.id != sessions.last?.id {
+                            Divider().padding(.horizontal, 12)
+                        }
                     }
                 }
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.4))
             }
         }
     }
