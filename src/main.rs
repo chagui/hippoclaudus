@@ -81,6 +81,15 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+    /// Show distributions and breakdowns over recent sessions
+    Analytics {
+        /// Number of days to look back
+        #[arg(long, default_value = "30")]
+        days: u32,
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -122,6 +131,7 @@ fn main() {
             threshold,
             json,
         } => commands::cmd_prompts(&config, days, threshold, json),
+        Commands::Analytics { days, json } => commands::cmd_analytics(&config, days, json),
     };
 
     if let Err(e) = result {

@@ -1,3 +1,4 @@
+mod analytics;
 mod extract;
 mod list;
 mod prompts;
@@ -5,6 +6,7 @@ mod stats;
 mod status;
 mod sync_cmd;
 
+pub use analytics::cmd_analytics;
 pub use extract::cmd_extract;
 pub use list::cmd_list;
 pub use prompts::cmd_prompts;
