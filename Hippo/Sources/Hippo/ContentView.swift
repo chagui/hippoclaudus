@@ -43,19 +43,13 @@ struct ContentView: View {
                         }
                     }
 
-                    if !statusProvider.inactiveSessions.isEmpty {
-                        InactiveSessionsSection(
-                            sessions: statusProvider.inactiveSessions,
-                            enrichmentProvider: enrichmentProvider,
-                            expandedSessions: $expandedSessions,
-                            onToggleSession: toggleSession,
-                        )
-                    }
-
                     ToolsSection(
                         statusProvider: statusProvider,
                         repoProvider: repoProvider,
                         vaultTagProvider: vaultTagProvider,
+                        enrichmentProvider: enrichmentProvider,
+                        expandedSessions: $expandedSessions,
+                        onToggleSession: toggleSession,
                     )
                 }
             }
@@ -420,6 +414,9 @@ struct ToolsSection: View {
     @ObservedObject var statusProvider: StatusProvider
     @ObservedObject var repoProvider: RepoProvider
     @ObservedObject var vaultTagProvider: VaultTagProvider
+    @ObservedObject var enrichmentProvider: GitEnrichmentProvider
+    @Binding var expandedSessions: Set<String>
+    let onToggleSession: (String) -> Void
     @State private var showRepos = false
     @State private var showTags = false
 
@@ -459,6 +456,15 @@ struct ToolsSection: View {
                             }
                     }
                 }
+            }
+
+            if !statusProvider.inactiveSessions.isEmpty {
+                InactiveSessionsSection(
+                    sessions: statusProvider.inactiveSessions,
+                    enrichmentProvider: enrichmentProvider,
+                    expandedSessions: $expandedSessions,
+                    onToggleSession: onToggleSession,
+                )
             }
 
             Divider().padding(.horizontal, 12).padding(.vertical, 4)
