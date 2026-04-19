@@ -3,6 +3,7 @@ use std::path::Path;
 use anyhow::Result;
 
 use hippoclaudus::config::Config;
+use hippoclaudus::pricing::cost_usd;
 use hippoclaudus::session::{extract_session_metadata, ActiveSessionInfo};
 use hippoclaudus::state::SyncState;
 use hippoclaudus::{discover_active_sessions, discover_sessions, vault_note_count};
@@ -13,6 +14,13 @@ use crate::helpers::{file_mtime, session_id_from_path, vault_size_kb};
 const INACTIVE_WINDOW_DAYS: u32 = 1;
 
 fn session_info_to_json(info: &ActiveSessionInfo) -> serde_json::Value {
+    let cost = cost_usd(
+        &info.model,
+        info.total_input_tokens,
+        info.total_output_tokens,
+        info.total_cache_read_tokens,
+        info.total_cache_creation_tokens,
+    );
     let mut obj = serde_json::json!({
         "session_id": info.session_id,
         "project_name": info.project_name,
@@ -25,6 +33,7 @@ fn session_info_to_json(info: &ActiveSessionInfo) -> serde_json::Value {
         "total_output_tokens": info.total_output_tokens,
         "total_cache_read_tokens": info.total_cache_read_tokens,
         "total_cache_creation_tokens": info.total_cache_creation_tokens,
+        "cost_usd": cost,
         "avg_turn_duration_ms": info.avg_turn_duration_ms,
         "turn_count": info.turn_count,
         "state": info.state,

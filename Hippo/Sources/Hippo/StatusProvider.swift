@@ -160,6 +160,9 @@ struct ActiveSessionResponse: Decodable, Identifiable {
     let totalOutputTokens: Int
     let totalCacheReadTokens: Int
     let totalCacheCreationTokens: Int
+    /// Session cost in USD, computed by the Rust CLI (`pricing::cost_usd`).
+    /// Optional for backward compatibility with older hpc binaries.
+    let costUsd: Double?
     let avgTurnDurationMs: Int
     let turnCount: Int
     let state: String
@@ -198,30 +201,13 @@ struct ActiveSessionResponse: Decodable, Identifiable {
         return "\(total)"
     }
 
-    /// Estimated cost in USD based on model and token counts.
+    /// Estimated cost in USD, formatted. The underlying value comes from the
+    /// Rust CLI (single source of truth for pricing). Falls back to "-" for
+    /// older CLI builds that don't emit the field.
     var estimatedCost: String {
-        // Pricing per million tokens (as of early 2026)
-        let (inputPer1M, outputPer1M, cacheReadPer1M, cacheCreatePer1M): (Double, Double, Double, Double) = {
-            if model.contains("opus") {
-                return (15.0, 75.0, 1.5, 18.75)
-            } else if model.contains("sonnet") {
-                return (3.0, 15.0, 0.3, 3.75)
-            } else if model.contains("haiku") {
-                return (0.80, 4.0, 0.08, 1.0)
-            }
-            return (3.0, 15.0, 0.3, 3.75) // default to Sonnet pricing
-        }()
-
-        // Non-cached input = total input - cache_read - cache_creation
-        let nonCachedInput = max(0, totalInputTokens - totalCacheReadTokens - totalCacheCreationTokens)
-        let cost = (Double(nonCachedInput) * inputPer1M
-            + Double(totalOutputTokens) * outputPer1M
-            + Double(totalCacheReadTokens) * cacheReadPer1M
-            + Double(totalCacheCreationTokens) * cacheCreatePer1M) / 1_000_000
-
-        if cost < 0.01 {
-            return "<$0.01"
-        }
+        guard let cost = costUsd else { return "-" }
+        if cost <= 0 { return "$0" }
+        if cost < 0.01 { return "<$0.01" }
         return String(format: "$%.2f", cost)
     }
 
@@ -288,6 +274,7 @@ struct ActiveSessionResponse: Decodable, Identifiable {
         case totalOutputTokens = "total_output_tokens"
         case totalCacheReadTokens = "total_cache_read_tokens"
         case totalCacheCreationTokens = "total_cache_creation_tokens"
+        case costUsd = "cost_usd"
         case avgTurnDurationMs = "avg_turn_duration_ms"
         case turnCount = "turn_count"
         case state

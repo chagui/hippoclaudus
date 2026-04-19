@@ -78,32 +78,42 @@ struct ActiveSessionResponseTests {
 
     // MARK: - estimatedCost tests
 
-    @Test func estimatedCostZeroTokens() {
-        let s = makeSession(totalInputTokens: 0, totalOutputTokens: 0)
+    /// Cost is computed by the Rust CLI (`pricing::cost_usd`). These tests only
+    /// verify formatting of the `cost_usd` field; arithmetic correctness lives
+    /// in Rust unit tests under src/pricing.rs.
+    @Test func estimatedCostMissingShowsDash() {
+        // makeSession() omits cost_usd — older hpc binaries wouldn't emit it.
+        let s = makeSession()
+        #expect(s.estimatedCost == "-")
+    }
+
+    @Test func estimatedCostZeroIsDollarZero() throws {
+        let s = try sessionWithCost(0.0)
+        #expect(s.estimatedCost == "$0")
+    }
+
+    @Test func estimatedCostSubCentShowsLessThanPenny() throws {
+        let s = try sessionWithCost(0.005)
         #expect(s.estimatedCost == "<$0.01")
     }
 
-    @Test func estimatedCostOpusMoreExpensive() {
-        let opus = makeSession(model: "claude-opus-4-6", totalInputTokens: 100_000, totalOutputTokens: 50000)
-        let sonnet = makeSession(model: "claude-sonnet-4-6", totalInputTokens: 100_000, totalOutputTokens: 50000)
-        let haiku = makeSession(model: "claude-haiku-4-5", totalInputTokens: 100_000, totalOutputTokens: 50000)
-
-        let opusCost = parseCost(opus.estimatedCost)
-        let sonnetCost = parseCost(sonnet.estimatedCost)
-        let haikuCost = parseCost(haiku.estimatedCost)
-
-        #expect(opusCost > sonnetCost, "Opus should cost more than Sonnet")
-        #expect(sonnetCost > haikuCost, "Sonnet should cost more than Haiku")
+    @Test func estimatedCostFormatsDollarsAndCents() throws {
+        let s = try sessionWithCost(12.345)
+        #expect(s.estimatedCost == "$12.35")
     }
 
-    @Test func estimatedCostMonotonicallyIncreasesWithTokens() {
-        let low = makeSession(totalInputTokens: 10000, totalOutputTokens: 5000)
-        let high = makeSession(totalInputTokens: 100_000, totalOutputTokens: 50000)
-
-        let lowCost = parseCost(low.estimatedCost)
-        let highCost = parseCost(high.estimatedCost)
-
-        #expect(highCost >= lowCost)
+    private func sessionWithCost(_ cost: Double) throws -> ActiveSessionResponse {
+        let json: [String: Any] = [
+            "session_id": "cost-1", "project_name": "test", "project_cwd": "/tmp",
+            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
+            "exchange_count": 1, "model": "sonnet",
+            "total_input_tokens": 0, "total_output_tokens": 0,
+            "total_cache_read_tokens": 0, "total_cache_creation_tokens": 0,
+            "cost_usd": cost,
+            "avg_turn_duration_ms": 0, "turn_count": 0, "state": "active",
+        ]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        return try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
     }
 
     // MARK: - avgTurnDuration tests
@@ -263,36 +273,5 @@ struct ActiveSessionResponseTests {
         let data = try JSONSerialization.data(withJSONObject: json)
         let s = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
         #expect(s.filesTouchedCount == 42)
-    }
-
-    // MARK: - estimatedCost with cache tokens
-
-    @Test func estimatedCostReducedByCacheRead() throws {
-        let noCacheSonnet = makeSession(
-            model: "claude-sonnet-4-6",
-            totalInputTokens: 100_000,
-            totalOutputTokens: 10000,
-        )
-        let json: [String: Any] = [
-            "session_id": "cache-1", "project_name": "test", "project_cwd": "/tmp",
-            "git_branch": "main", "started_at": "2025-01-01T00:00:00Z",
-            "exchange_count": 1, "model": "claude-sonnet-4-6",
-            "total_input_tokens": 100_000, "total_output_tokens": 10000,
-            "total_cache_read_tokens": 80000, "total_cache_creation_tokens": 0,
-            "avg_turn_duration_ms": 0, "turn_count": 0, "state": "active",
-        ]
-        let data = try JSONSerialization.data(withJSONObject: json)
-        let cachedSonnet = try JSONDecoder().decode(ActiveSessionResponse.self, from: data)
-
-        let noCacheCost = parseCost(noCacheSonnet.estimatedCost)
-        let cachedCost = parseCost(cachedSonnet.estimatedCost)
-        #expect(cachedCost < noCacheCost, "Cache reads should reduce cost")
-    }
-
-    // MARK: - Helpers
-
-    private func parseCost(_ cost: String) -> Double {
-        if cost == "<$0.01" { return 0.005 }
-        return Double(cost.replacingOccurrences(of: "$", with: "")) ?? 0
     }
 }
