@@ -301,7 +301,7 @@ struct AnalyticsView: View {
 
     private func tooltip(for bucket: AnalyticsDailyBucket) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(isoDate(bucket.date).map { $0.formatted(date: .abbreviated, time: .omitted) } ?? bucket.date)
+            Text(formatTooltipDate(bucket.date))
                 .font(.system(size: 10, weight: .semibold))
             HStack(spacing: 6) {
                 Text(dailyMetric == .cost
@@ -339,6 +339,18 @@ struct AnalyticsView: View {
         f.dateFormat = "yyyy-MM-dd"
         f.timeZone = TimeZone.current
         return f.date(from: str)
+    }
+
+    /// "Fri, Apr 19, 2026" — weekday abbreviation prefixed to the abbreviated date.
+    private func formatTooltipDate(_ raw: String) -> String {
+        guard let date = isoDate(raw) else { return raw }
+        return date.formatted(
+            Date.FormatStyle()
+                .weekday(.abbreviated)
+                .month(.abbreviated)
+                .day()
+                .year(),
+        )
     }
 
     // MARK: - By-model chart
