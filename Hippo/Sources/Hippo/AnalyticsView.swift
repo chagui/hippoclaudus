@@ -55,10 +55,13 @@ struct AnalyticsView: View {
                 errorState(err)
             } else if let response = provider.response {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 18) {
                         totalsRow(response)
+                        Divider()
                         dailyChart(response)
+                        Divider()
                         modelChart(response)
+                        Divider()
                         percentileTable(response)
                     }
                     .padding(16)
@@ -469,10 +472,9 @@ private struct SectionLabel: View {
     }
 
     var body: some View {
-        Text(text.uppercased())
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(.secondary)
-            .tracking(0.5)
+        Text(text)
+            .font(.system(size: 13, weight: .bold))
+            .foregroundStyle(.primary)
     }
 }
 
