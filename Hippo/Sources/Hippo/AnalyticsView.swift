@@ -18,11 +18,13 @@ private func formatTokens(_ v: Double) -> String {
 
 private func formatDurationMs(_ v: Double) -> String {
     let totalSecs = Int(v / 1000)
-    let h = totalSecs / 3600
+    let d = totalSecs / 86400
+    let h = (totalSecs % 86400) / 3600
     let m = (totalSecs % 3600) / 60
     let s = totalSecs % 60
-    if h > 0 { return "\(h)h\(m)m" }
-    if m > 0 { return "\(m)m\(s)s" }
+    if d > 0 { return "\(d)d \(h)h" }
+    if h > 0 { return "\(h)h \(m)m" }
+    if m > 0 { return "\(m)m \(s)s" }
     return "\(s)s"
 }
 
@@ -55,9 +57,9 @@ struct AnalyticsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         totalsRow(response)
-                        percentileTable(response)
                         dailyChart(response)
                         modelChart(response)
+                        percentileTable(response)
                     }
                     .padding(16)
                 }
@@ -247,29 +249,43 @@ struct AnalyticsView: View {
                 .frame(width: 160)
             }
 
+            // Stack order: Opus at bottom, Sonnet middle, Haiku top, Other above.
+            let stackOrder = modelStackOrder(for: r.daily)
             Chart(r.daily) { bucket in
                 BarMark(
                     x: .value("Date", isoDate(bucket.date) ?? Date()),
                     y: .value(dailyMetric.rawValue, dailyValue(bucket)),
                 )
-                .foregroundStyle(Color.accentColor.gradient)
-
-                if let hovered = hoveredDate, let match = nearestBucket(to: hovered, in: r.daily) {
-                    if let matchDate = isoDate(match.date), Calendar.current.isDate(matchDate, inSameDayAs: hovered) {
-                        RuleMark(x: .value("Date", matchDate))
-                            .foregroundStyle(Color.secondary.opacity(0.3))
-                            .zIndex(-1)
-                            .annotation(
-                                position: .top,
-                                spacing: 4,
-                                overflowResolution: .init(x: .fit(to: .chart), y: .disabled),
-                            ) {
-                                tooltip(for: match)
-                            }
+                .foregroundStyle(by: .value("Model", bucket.model))
+                .position(by: .value("Model", bucket.model), axis: .vertical)
+            }
+            .chartForegroundStyleScale(
+                domain: stackOrder,
+                range: stackOrder.map(colorForModel),
+            )
+            .chartLegend(position: .top, alignment: .trailing, spacing: 4)
+            .chartXSelection(value: $hoveredDate)
+            .chartXScale(domain: chartDomain(r.window))
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    if let hovered = hoveredDate,
+                       let snapped = snapToBucketDate(hovered, in: r.daily),
+                       let xPos = proxy.position(forX: snapped)
+                    {
+                        let rect = geo.frame(in: .local)
+                        let sameDayRows = r.daily.filter { isoDate($0.date).map { Calendar.current.isDate($0, inSameDayAs: snapped) } ?? false }
+                        ZStack(alignment: .topLeading) {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.25))
+                                .frame(width: 1, height: rect.height)
+                                .offset(x: xPos, y: 0)
+                            dayTooltip(for: snapped, rows: sameDayRows)
+                                .fixedSize()
+                                .offset(tooltipOffset(xPos: xPos, rect: rect))
+                        }
                     }
                 }
             }
-            .chartXSelection(value: $hoveredDate)
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine()
@@ -287,37 +303,83 @@ struct AnalyticsView: View {
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day(), centered: true)
                 }
             }
-            .frame(height: 180)
+            .frame(height: 200)
         }
     }
 
-    private func nearestBucket(to date: Date, in buckets: [AnalyticsDailyBucket]) -> AnalyticsDailyBucket? {
-        buckets.min { a, b in
-            let da = (isoDate(a.date) ?? date).timeIntervalSince(date).magnitude
-            let db = (isoDate(b.date) ?? date).timeIntervalSince(date).magnitude
-            return da < db
+    private func chartDomain(_ window: AnalyticsWindow) -> ClosedRange<Date> {
+        let start = isoDate(window.start) ?? Date().addingTimeInterval(-30 * 86400)
+        let end = isoDate(window.end) ?? Date()
+        // Pad the range by half a day on each side so edge bars aren't clipped.
+        let half: TimeInterval = 43200
+        return start.addingTimeInterval(-half) ... end.addingTimeInterval(half)
+    }
+
+    /// Snap a continuous hover x-value back to a bucket date we actually have data for.
+    private func snapToBucketDate(_ date: Date, in buckets: [AnalyticsDailyBucket]) -> Date? {
+        let unique = Set(buckets.compactMap { isoDate($0.date) })
+        return unique.min { a, b in
+            a.timeIntervalSince(date).magnitude < b.timeIntervalSince(date).magnitude
         }
     }
 
-    private func tooltip(for bucket: AnalyticsDailyBucket) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(formatTooltipDate(bucket.date))
+    private func modelStackOrder(for buckets: [AnalyticsDailyBucket]) -> [String] {
+        let preferred = ["opus", "sonnet", "haiku", "other"]
+        let present = Set(buckets.map(\.model))
+        return preferred.filter(present.contains) + present.subtracting(preferred).sorted()
+    }
+
+    /// Keep the tooltip from overflowing the chart: shift left as we approach the right edge.
+    private func tooltipOffset(xPos: CGFloat, rect: CGRect) -> CGSize {
+        let tooltipWidth: CGFloat = 200
+        let padding: CGFloat = 8
+        let desired = xPos + padding
+        let maxX = rect.width - tooltipWidth - padding
+        let x = min(desired, maxX)
+        return CGSize(width: max(0, x), height: padding)
+    }
+
+    @ViewBuilder
+    private func dayTooltip(for date: Date, rows: [AnalyticsDailyBucket]) -> some View {
+        let totalValue = rows.reduce(0.0) { $0 + dailyValue($1) }
+        let totalSessions = rows.reduce(0) { $0 + $1.sessionCount }
+        VStack(alignment: .leading, spacing: 3) {
+            Text(formatTooltipDate(date))
                 .font(.system(size: 10, weight: .semibold))
             HStack(spacing: 6) {
-                Text(dailyMetric == .cost
-                    ? formatCost(bucket.costUsd)
-                    : formatTokens(Double(bucket.totalTokens)))
+                Text(dailyMetric == .cost ? formatCost(totalValue) : formatTokens(totalValue))
                     .font(.system(size: 11, weight: .medium))
                     .monospacedDigit()
                 Text("·")
                     .foregroundStyle(.tertiary)
-                Text("\(bucket.sessionCount) \(bucket.sessionCount == 1 ? "session" : "sessions")")
+                Text("\(totalSessions) \(totalSessions == 1 ? "session" : "sessions")")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
+            if rows.count > 1 {
+                Divider()
+                    .padding(.vertical, 1)
+                ForEach(rows.sorted { dailyValue($0) > dailyValue($1) }) { row in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(colorForModel(row.model))
+                            .frame(width: 6, height: 6)
+                        Text(row.model.capitalized)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                        Spacer(minLength: 8)
+                        Text(dailyMetric == .cost
+                            ? formatCost(row.costUsd)
+                            : formatTokens(Double(row.totalTokens)))
+                            .font(.system(size: 10))
+                            .monospacedDigit()
+                    }
+                }
+            }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
+        .frame(maxWidth: 200, alignment: .leading)
         .background(Color(nsColor: .controlBackgroundColor))
         .overlay(
             RoundedRectangle(cornerRadius: 4)
@@ -342,9 +404,8 @@ struct AnalyticsView: View {
     }
 
     /// "Fri, Apr 19, 2026" — weekday abbreviation prefixed to the abbreviated date.
-    private func formatTooltipDate(_ raw: String) -> String {
-        guard let date = isoDate(raw) else { return raw }
-        return date.formatted(
+    private func formatTooltipDate(_ date: Date) -> String {
+        date.formatted(
             Date.FormatStyle()
                 .weekday(.abbreviated)
                 .month(.abbreviated)

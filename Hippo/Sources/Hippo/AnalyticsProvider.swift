@@ -47,6 +47,7 @@ struct AnalyticsModelBucket: Decodable, Identifiable {
 
 struct AnalyticsDailyBucket: Decodable, Identifiable {
     let date: String
+    let model: String
     let sessionCount: Int
     let costUsd: Double
     let totalTokens: Int
@@ -54,11 +55,12 @@ struct AnalyticsDailyBucket: Decodable, Identifiable {
     let userTimeMs: Int
 
     var id: String {
-        date
+        "\(date)-\(model)"
     }
 
     enum CodingKeys: String, CodingKey {
         case date
+        case model
         case sessionCount = "session_count"
         case costUsd = "cost_usd"
         case totalTokens = "total_tokens"
@@ -67,9 +69,15 @@ struct AnalyticsDailyBucket: Decodable, Identifiable {
     }
 }
 
+struct AnalyticsWindow: Decodable {
+    let start: String
+    let end: String
+}
+
 struct AnalyticsResponse: Decodable {
     let days: Int
     let sessionCount: Int
+    let window: AnalyticsWindow
     let totals: AnalyticsTotals
     let distributions: [String: AnalyticsDistribution]
     let byModel: [AnalyticsModelBucket]
@@ -78,6 +86,7 @@ struct AnalyticsResponse: Decodable {
     enum CodingKeys: String, CodingKey {
         case days
         case sessionCount = "session_count"
+        case window
         case totals
         case distributions
         case byModel = "by_model"

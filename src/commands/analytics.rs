@@ -107,8 +107,9 @@ struct ModelAggregate {
     total_duration_ms: u64,
 }
 
-struct DailyAggregate {
+struct DailyBucket {
     date: NaiveDate,
+    model: &'static str,
     session_count: u64,
     cost_usd: f64,
     total_tokens: u64,
@@ -142,11 +143,17 @@ fn compute_by_model(samples: &[Sample]) -> Vec<ModelAggregate> {
     out
 }
 
-fn compute_daily(samples: &[Sample], days: u32) -> Vec<DailyAggregate> {
-    let mut map: BTreeMap<NaiveDate, DailyAggregate> = BTreeMap::new();
+fn compute_daily(samples: &[Sample]) -> Vec<DailyBucket> {
+    // One bucket per (date, model_family). The Swift side stacks these by
+    // colour to show how much of each day's cost / tokens came from each
+    // model. Continuous-x behaviour for empty days is handled by pinning the
+    // chart's x-domain to the `window` field in the output, not by emitting
+    // zero-fill rows here.
+    let mut map: BTreeMap<(NaiveDate, &'static str), DailyBucket> = BTreeMap::new();
     for s in samples {
-        let entry = map.entry(s.date).or_insert(DailyAggregate {
+        let entry = map.entry((s.date, s.model_family)).or_insert(DailyBucket {
             date: s.date,
+            model: s.model_family,
             session_count: 0,
             cost_usd: 0.0,
             total_tokens: 0,
@@ -159,26 +166,15 @@ fn compute_daily(samples: &[Sample], days: u32) -> Vec<DailyAggregate> {
         entry.agent_time_ms += s.agent_time_ms;
         entry.user_time_ms += s.user_time_ms;
     }
+    map.into_values().collect()
+}
 
-    // Zero-fill the window so the chart has a continuous x-axis.
+fn window_bounds(days: u32) -> (NaiveDate, NaiveDate) {
     let end = today();
     let start = end
         .checked_sub_signed(chrono::Duration::days(days as i64 - 1))
         .unwrap_or(end);
-    let mut day = start;
-    while day <= end {
-        map.entry(day).or_insert(DailyAggregate {
-            date: day,
-            session_count: 0,
-            cost_usd: 0.0,
-            total_tokens: 0,
-            agent_time_ms: 0,
-            user_time_ms: 0,
-        });
-        day = day.succ_opt().unwrap_or(day);
-    }
-
-    map.into_values().collect()
+    (start, end)
 }
 
 fn distribution_json(d: &Distribution) -> serde_json::Value {
@@ -229,7 +225,8 @@ pub fn cmd_analytics(config: &Config, days: u32, json: bool) -> Result<()> {
     let totals_duration_ms: u64 = samples.iter().map(|s| s.total_duration_ms).sum();
 
     let by_model = compute_by_model(&samples);
-    let daily = compute_daily(&samples, days);
+    let daily = compute_daily(&samples);
+    let (window_start, window_end) = window_bounds(days);
 
     if json {
         let distributions = serde_json::json!({
@@ -269,6 +266,7 @@ pub fn cmd_analytics(config: &Config, days: u32, json: bool) -> Result<()> {
             .map(|d| {
                 serde_json::json!({
                     "date": d.date.to_string(),
+                    "model": d.model,
                     "session_count": d.session_count,
                     "cost_usd": d.cost_usd,
                     "total_tokens": d.total_tokens,
@@ -281,6 +279,10 @@ pub fn cmd_analytics(config: &Config, days: u32, json: bool) -> Result<()> {
         let out = serde_json::json!({
             "days": days,
             "session_count": samples.len(),
+            "window": {
+                "start": window_start.to_string(),
+                "end": window_end.to_string(),
+            },
             "totals": {
                 "cost_usd": totals_cost_usd,
                 "total_tokens": totals_total_tokens,
@@ -334,7 +336,7 @@ fn print_text(
     bashes: &[f64],
     files: &[f64],
     by_model: &[ModelAggregate],
-    daily: &[DailyAggregate],
+    daily: &[DailyBucket],
 ) {
     println!("=== Session Analytics (last {} days) ===", days);
     println!(
@@ -378,23 +380,28 @@ fn print_text(
         }
     }
 
-    // Small ASCII daily bar (cost). Scales to the max daily cost in the window.
-    let max_daily = daily.iter().map(|d| d.cost_usd).fold(0.0_f64, f64::max);
+    // Small ASCII daily bar (cost). `daily[]` is per-(date, model); aggregate
+    // back to per-day totals for the text view.
+    let mut day_totals: BTreeMap<NaiveDate, f64> = BTreeMap::new();
+    for d in daily {
+        *day_totals.entry(d.date).or_insert(0.0) += d.cost_usd;
+    }
+    let max_daily = day_totals.values().copied().fold(0.0_f64, f64::max);
     if max_daily > 0.0 {
         println!();
         println!(
             "Daily cost ($, bars scaled to window max ${:.2}):",
             max_daily
         );
-        for d in daily {
-            let blocks = ((d.cost_usd / max_daily) * 30.0).round() as usize;
+        for (date, cost_usd) in &day_totals {
+            let blocks = ((cost_usd / max_daily) * 30.0).round() as usize;
             let bar: String = "█".repeat(blocks);
             println!(
                 "  {:04}-{:02}-{:02} {:>6.2} {}",
-                d.date.year(),
-                d.date.month(),
-                d.date.day(),
-                d.cost_usd,
+                date.year(),
+                date.month(),
+                date.day(),
+                cost_usd,
                 bar,
             );
         }
@@ -436,10 +443,13 @@ fn format_cost(v: f64) -> String {
 
 fn format_duration_ms(ms: u64) -> String {
     let total_secs = ms / 1000;
-    let hours = total_secs / 3600;
+    let days = total_secs / 86_400;
+    let hours = (total_secs % 86_400) / 3600;
     let minutes = (total_secs % 3600) / 60;
     let seconds = total_secs % 60;
-    if hours > 0 {
+    if days > 0 {
+        format!("{}d{}h", days, hours)
+    } else if hours > 0 {
         format!("{}h{}m", hours, minutes)
     } else if minutes > 0 {
         format!("{}m{}s", minutes, seconds)
