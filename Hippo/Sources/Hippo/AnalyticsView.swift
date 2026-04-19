@@ -86,6 +86,7 @@ struct AnalyticsView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .frame(width: 180)
             .onChange(of: days) { _, newValue in
                 Task { await provider.refresh(days: newValue) }
@@ -235,12 +236,13 @@ struct AnalyticsView: View {
             HStack {
                 SectionLabel("Daily")
                 Spacer()
-                Picker("", selection: $dailyMetric) {
+                Picker("Metric", selection: $dailyMetric) {
                     ForEach(DailyMetric.allCases) { m in
                         Text(m.rawValue).tag(m)
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .frame(width: 160)
             }
 
