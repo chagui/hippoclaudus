@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-19
+
+
+### Features
+- **(hippo)** Show 😴 Rest day tooltip on empty days ([75b4bf3](https://github.com/chagui/hippoclaudus/commit/75b4bf3e4863debd7151ef2d741a3c3ef3f899d8))
+
+
+### Bug Fixes
+- **(analytics)** Drop daily buckets outside the window ([5bff54d](https://github.com/chagui/hippoclaudus/commit/5bff54dca3f8045071b854192bec300ad81ce043))
+- **(hippo)** Align daily-chart rule and tooltip with plot area ([a98bcad](https://github.com/chagui/hippoclaudus/commit/a98bcad0655ab2b75f85a6c72f197caf598a88ca))
+
 ## [0.3.0] - 2026-04-19
 
 
