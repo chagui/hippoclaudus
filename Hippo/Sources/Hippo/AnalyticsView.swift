@@ -284,7 +284,7 @@ struct AnalyticsView: View {
                         let sameDayRows = r.daily.filter { isoDate($0.date).map { Calendar.current.isDate($0, inSameDayAs: snapped) } ?? false }
                         ZStack(alignment: .topLeading) {
                             Rectangle()
-                                .fill(Color.secondary.opacity(0.25))
+                                .fill(Color.white)
                                 .frame(width: 1, height: plotRect.height)
                                 .offset(x: overlayX, y: plotRect.minY)
                             dayTooltip(for: snapped, rows: sameDayRows)
