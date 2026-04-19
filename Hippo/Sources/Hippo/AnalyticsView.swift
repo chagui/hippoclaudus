@@ -273,18 +273,23 @@ struct AnalyticsView: View {
                 GeometryReader { geo in
                     if let hovered = hoveredDate,
                        let snapped = snapToBucketDate(hovered, in: r.daily),
-                       let xPos = proxy.position(forX: snapped)
+                       let xPos = proxy.position(forX: snapped),
+                       let plotAnchor = proxy.plotFrame
                     {
-                        let rect = geo.frame(in: .local)
+                        // `xPos` is in the plot area's coordinate space, not the overlay's.
+                        // Translate by the plot frame's origin so the rule line and tooltip
+                        // line up with the actual bar.
+                        let plotRect = geo[plotAnchor]
+                        let overlayX = plotRect.minX + xPos
                         let sameDayRows = r.daily.filter { isoDate($0.date).map { Calendar.current.isDate($0, inSameDayAs: snapped) } ?? false }
                         ZStack(alignment: .topLeading) {
                             Rectangle()
                                 .fill(Color.secondary.opacity(0.25))
-                                .frame(width: 1, height: rect.height)
-                                .offset(x: xPos, y: 0)
+                                .frame(width: 1, height: plotRect.height)
+                                .offset(x: overlayX, y: plotRect.minY)
                             dayTooltip(for: snapped, rows: sameDayRows)
                                 .fixedSize()
-                                .offset(tooltipOffset(xPos: xPos, rect: rect))
+                                .offset(tooltipOffset(overlayX: overlayX, plotRect: plotRect))
                         }
                     }
                 }
@@ -332,14 +337,15 @@ struct AnalyticsView: View {
         return preferred.filter(present.contains) + present.subtracting(preferred).sorted()
     }
 
-    /// Keep the tooltip from overflowing the chart: shift left as we approach the right edge.
-    private func tooltipOffset(xPos: CGFloat, rect: CGRect) -> CGSize {
+    /// Position the tooltip just to the right of the hovered bar, clamped to the plot's
+    /// right edge so it never spills outside the chart.
+    private func tooltipOffset(overlayX: CGFloat, plotRect: CGRect) -> CGSize {
         let tooltipWidth: CGFloat = 200
         let padding: CGFloat = 8
-        let desired = xPos + padding
-        let maxX = rect.width - tooltipWidth - padding
-        let x = min(desired, maxX)
-        return CGSize(width: max(0, x), height: padding)
+        let desired = overlayX + padding
+        let rightEdge = plotRect.maxX - tooltipWidth - padding
+        let x = min(desired, rightEdge)
+        return CGSize(width: max(plotRect.minX, x), height: plotRect.minY + padding)
     }
 
     @ViewBuilder
