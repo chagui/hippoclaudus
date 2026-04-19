@@ -484,6 +484,10 @@ struct ToolsSection: View {
                 }
             }
 
+            ToolMenuItem(icon: "chart.bar.xaxis", label: "Session Analytics…") {
+                AnalyticsWindowController.show()
+            }
+
             ToolMenuItem(icon: "info.circle", label: "About Hippoclaudus") {
                 AboutWindowController.show()
             }
