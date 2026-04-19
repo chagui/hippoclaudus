@@ -272,7 +272,7 @@ struct AnalyticsView: View {
             .chartOverlay { proxy in
                 GeometryReader { geo in
                     if let hovered = hoveredDate,
-                       let snapped = snapToBucketDate(hovered, in: r.daily),
+                       let snapped = snapToWindowDate(hovered, window: r.window),
                        let xPos = proxy.position(forX: snapped),
                        let plotAnchor = proxy.plotFrame
                     {
@@ -323,12 +323,14 @@ struct AnalyticsView: View {
         return start.addingTimeInterval(-half) ... end.addingTimeInterval(half)
     }
 
-    /// Snap a continuous hover x-value back to a bucket date we actually have data for.
-    private func snapToBucketDate(_ date: Date, in buckets: [AnalyticsDailyBucket]) -> Date? {
-        let unique = Set(buckets.compactMap { isoDate($0.date) })
-        return unique.min { a, b in
-            a.timeIntervalSince(date).magnitude < b.timeIntervalSince(date).magnitude
-        }
+    /// Snap a continuous hover x-value to the nearest calendar day inside the window.
+    /// This returns a date even for empty days, so the tooltip can show a lazy-day message
+    /// instead of jumping to the nearest bar.
+    private func snapToWindowDate(_ date: Date, window: AnalyticsWindow) -> Date? {
+        guard let start = isoDate(window.start), let end = isoDate(window.end) else { return nil }
+        let cal = Calendar.current
+        let clamped = min(max(date, start), end)
+        return cal.startOfDay(for: clamped)
     }
 
     private func modelStackOrder(for buckets: [AnalyticsDailyBucket]) -> [String] {
@@ -348,42 +350,14 @@ struct AnalyticsView: View {
         return CGSize(width: max(plotRect.minX, x), height: plotRect.minY + padding)
     }
 
-    @ViewBuilder
     private func dayTooltip(for date: Date, rows: [AnalyticsDailyBucket]) -> some View {
-        let totalValue = rows.reduce(0.0) { $0 + dailyValue($1) }
-        let totalSessions = rows.reduce(0) { $0 + $1.sessionCount }
         VStack(alignment: .leading, spacing: 3) {
             Text(formatTooltipDate(date))
                 .font(.system(size: 10, weight: .semibold))
-            HStack(spacing: 6) {
-                Text(dailyMetric == .cost ? formatCost(totalValue) : formatTokens(totalValue))
-                    .font(.system(size: 11, weight: .medium))
-                    .monospacedDigit()
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                Text("\(totalSessions) \(totalSessions == 1 ? "session" : "sessions")")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-            if rows.count > 1 {
-                Divider()
-                    .padding(.vertical, 1)
-                ForEach(rows.sorted { dailyValue($0) > dailyValue($1) }) { row in
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(colorForModel(row.model))
-                            .frame(width: 6, height: 6)
-                        Text(row.model.capitalized)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                        Spacer(minLength: 8)
-                        Text(dailyMetric == .cost
-                            ? formatCost(row.costUsd)
-                            : formatTokens(Double(row.totalTokens)))
-                            .font(.system(size: 10))
-                            .monospacedDigit()
-                    }
-                }
+            if rows.isEmpty {
+                lazyDayBody
+            } else {
+                activeDayBody(rows: rows)
             }
         }
         .padding(.horizontal, 8)
@@ -396,6 +370,52 @@ struct AnalyticsView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
+    }
+
+    private var lazyDayBody: some View {
+        HStack(spacing: 6) {
+            Text("😴")
+                .font(.system(size: 13))
+            Text("Rest day")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func activeDayBody(rows: [AnalyticsDailyBucket]) -> some View {
+        let totalValue = rows.reduce(0.0) { $0 + dailyValue($1) }
+        let totalSessions = rows.reduce(0) { $0 + $1.sessionCount }
+        HStack(spacing: 6) {
+            Text(dailyMetric == .cost ? formatCost(totalValue) : formatTokens(totalValue))
+                .font(.system(size: 11, weight: .medium))
+                .monospacedDigit()
+            Text("·")
+                .foregroundStyle(.tertiary)
+            Text("\(totalSessions) \(totalSessions == 1 ? "session" : "sessions")")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
+        if rows.count > 1 {
+            Divider()
+                .padding(.vertical, 1)
+            ForEach(rows.sorted { dailyValue($0) > dailyValue($1) }) { row in
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(colorForModel(row.model))
+                        .frame(width: 6, height: 6)
+                    Text(row.model.capitalized)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Text(dailyMetric == .cost
+                        ? formatCost(row.costUsd)
+                        : formatTokens(Double(row.totalTokens)))
+                        .font(.system(size: 10))
+                        .monospacedDigit()
+                }
+            }
+        }
     }
 
     private func dailyValue(_ bucket: AnalyticsDailyBucket) -> Double {
