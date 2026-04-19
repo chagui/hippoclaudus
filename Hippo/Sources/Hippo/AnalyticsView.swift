@@ -222,6 +222,7 @@ struct AnalyticsView: View {
     // MARK: - Daily time-series chart
 
     @State private var dailyMetric: DailyMetric = .cost
+    @State private var hoveredDate: Date?
 
     private enum DailyMetric: String, CaseIterable, Identifiable {
         case cost = "Cost"
@@ -252,7 +253,23 @@ struct AnalyticsView: View {
                     y: .value(dailyMetric.rawValue, dailyValue(bucket)),
                 )
                 .foregroundStyle(Color.accentColor.gradient)
+
+                if let hovered = hoveredDate, let match = nearestBucket(to: hovered, in: r.daily) {
+                    if let matchDate = isoDate(match.date), Calendar.current.isDate(matchDate, inSameDayAs: hovered) {
+                        RuleMark(x: .value("Date", matchDate))
+                            .foregroundStyle(Color.secondary.opacity(0.3))
+                            .zIndex(-1)
+                            .annotation(
+                                position: .top,
+                                spacing: 4,
+                                overflowResolution: .init(x: .fit(to: .chart), y: .disabled),
+                            ) {
+                                tooltip(for: match)
+                            }
+                    }
+                }
             }
+            .chartXSelection(value: $hoveredDate)
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisGridLine()
@@ -272,6 +289,42 @@ struct AnalyticsView: View {
             }
             .frame(height: 180)
         }
+    }
+
+    private func nearestBucket(to date: Date, in buckets: [AnalyticsDailyBucket]) -> AnalyticsDailyBucket? {
+        buckets.min { a, b in
+            let da = (isoDate(a.date) ?? date).timeIntervalSince(date).magnitude
+            let db = (isoDate(b.date) ?? date).timeIntervalSince(date).magnitude
+            return da < db
+        }
+    }
+
+    private func tooltip(for bucket: AnalyticsDailyBucket) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(isoDate(bucket.date).map { $0.formatted(date: .abbreviated, time: .omitted) } ?? bucket.date)
+                .font(.system(size: 10, weight: .semibold))
+            HStack(spacing: 6) {
+                Text(dailyMetric == .cost
+                    ? formatCost(bucket.costUsd)
+                    : formatTokens(Double(bucket.totalTokens)))
+                    .font(.system(size: 11, weight: .medium))
+                    .monospacedDigit()
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                Text("\(bucket.sessionCount) \(bucket.sessionCount == 1 ? "session" : "sessions")")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(Color.secondary.opacity(0.3), lineWidth: 0.5),
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
     }
 
     private func dailyValue(_ bucket: AnalyticsDailyBucket) -> Double {
