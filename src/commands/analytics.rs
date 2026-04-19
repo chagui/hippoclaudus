@@ -143,14 +143,23 @@ fn compute_by_model(samples: &[Sample]) -> Vec<ModelAggregate> {
     out
 }
 
-fn compute_daily(samples: &[Sample]) -> Vec<DailyBucket> {
+fn compute_daily(samples: &[Sample], window: (NaiveDate, NaiveDate)) -> Vec<DailyBucket> {
     // One bucket per (date, model_family). The Swift side stacks these by
     // colour to show how much of each day's cost / tokens came from each
     // model. Continuous-x behaviour for empty days is handled by pinning the
     // chart's x-domain to the `window` field in the output, not by emitting
     // zero-fill rows here.
+    //
+    // Drop samples whose `started_at` date falls outside the window. Session
+    // discovery filters by file mtime — a session started two weeks ago and
+    // last touched this morning would otherwise emit a bar two weeks to the
+    // left of the chart's x-axis.
+    let (window_start, window_end) = window;
     let mut map: BTreeMap<(NaiveDate, &'static str), DailyBucket> = BTreeMap::new();
     for s in samples {
+        if s.date < window_start || s.date > window_end {
+            continue;
+        }
         let entry = map.entry((s.date, s.model_family)).or_insert(DailyBucket {
             date: s.date,
             model: s.model_family,
@@ -224,9 +233,9 @@ pub fn cmd_analytics(config: &Config, days: u32, json: bool) -> Result<()> {
     let totals_total_tokens: u64 = samples.iter().map(|s| s.total_tokens).sum();
     let totals_duration_ms: u64 = samples.iter().map(|s| s.total_duration_ms).sum();
 
-    let by_model = compute_by_model(&samples);
-    let daily = compute_daily(&samples);
     let (window_start, window_end) = window_bounds(days);
+    let by_model = compute_by_model(&samples);
+    let daily = compute_daily(&samples, (window_start, window_end));
 
     if json {
         let distributions = serde_json::json!({
